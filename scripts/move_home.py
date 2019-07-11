@@ -45,11 +45,11 @@ def move_home():
     g.trajectory.joint_names = JOINT_NAMES
     try:
         move_to(home_pos,g)
-        zero_hand()
+        #zero_hand()
 
     except KeyboardInterrupt:
         arm_client.cancel_goal()
-        zero_hand()
+        #zero_hand()
         raise
     except:
         raise
@@ -63,11 +63,11 @@ def move_zero():
     g.trajectory.joint_names = JOINT_NAMES
     try:
         move_to(zero_pos,g)
-        zero_hand()
+        #zero_hand()
 
     except KeyboardInterrupt:
         arm_client.cancel_goal()
-        zero_hand()
+        #zero_hand()
         raise
     except:
         raise
@@ -103,10 +103,10 @@ def main():
         
         rospy.init_node("test_move", anonymous=True, disable_signals=True)
         arm_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
-        hand_client = actionlib.SimpleActionClient('pre_built_traj', pressure_controller_ros.msg.RunAction)
+        #hand_client = actionlib.SimpleActionClient('pre_built_traj', pressure_controller_ros.msg.RunAction)
         print "Waiting for servers..."
         arm_client.wait_for_server()
-        hand_client.wait_for_server()
+        #hand_client.wait_for_server()
         print "Connected to servers"
         parameters = rospy.get_param(None)
         index = str(parameters).find('prefix')

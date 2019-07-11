@@ -21,6 +21,7 @@ import actionlib
 from control_msgs.msg import *
 from trajectory_msgs.msg import *
 from sensor_msgs.msg import JointState
+import std_msgs.msg
 import pressure_controller_ros.msg
 from math import pi
 import numpy as np
@@ -49,21 +50,27 @@ def main():
     global arm_client
 
     try:
-        
         rospy.init_node("get_pos", anonymous=True, disable_signals=True)
-        arm_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
-        print "Waiting for servers..."
-        arm_client.wait_for_server()
-        print "Connected to servers"
+
+        r=rospy.Rate(100)
+        ur_script_pub = rospy.Publisher('/ur_driver/URScript', std_msgs.msg.String, queue_size=10)
+        ur_script_pub.publish('set robotmode freedrive')
+           
         parameters = rospy.get_param(None)
         index = str(parameters).find('prefix')
         if (index > 0):
             prefix = str(parameters)[index+len("prefix': '"):(index+len("prefix': '")+str(parameters)[index+len("prefix': '"):-1].find("'"))]
             for i, name in enumerate(JOINT_NAMES):
                 JOINT_NAMES[i] = prefix + name
-        get_position()
+        
+        while True:
+            get_position()
+            r.sleep()
+
+        
 
     except KeyboardInterrupt:
+        ur_script_pub.publish('set robotmode run')
         rospy.signal_shutdown("KeyboardInterrupt")
         raise
 
