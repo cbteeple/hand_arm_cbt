@@ -30,6 +30,7 @@ import numpy as np
 import yaml
 import os
 import sys
+from pynput.keyboard import Key, Listener
 
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
@@ -38,7 +39,8 @@ JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
 class Teacher:
     def __init__(self, traj_file):
         self.ur_script_pub = rospy.Publisher('/ur_driver/URScript', std_msgs.msg.String, queue_size=10)
-        self.r=rospy.Rate(2)
+        self.r=rospy.Rate(20)
+        self.toggle_record = False
 
         self.traj_file = traj_file
 
@@ -59,7 +61,10 @@ class Teacher:
                     print("Starting Freedrive Mode: You can now move the robot by hand!")
                     while not rospy.is_shutdown():
                         self.ur_script_pub.publish('def myProg():\n\twhile (True):\n\t\tfreedrive_mode()\n\t\tsync()\n\tend\nend\n')
-                        self.get_pos()
+
+                        if self.toggle_record:
+                            self.get_pos()
+
                         self.r.sleep()
                 except KeyboardInterrupt:
                     print("\nExiting Freedrive Mode: The robot is now locked in place.")
@@ -72,7 +77,7 @@ class Teacher:
 
 
 
-    def get_pos(self):
+    def get_pos(self,time=None):
         joint_states = rospy.wait_for_message("joint_states", JointState)
         joints_pos = joint_states.position
         joint_pos_deg = np.rad2deg(joints_pos).tolist()
@@ -80,13 +85,19 @@ class Teacher:
         out = {}
         out['joints_pos'] = list(joint_states.position)
         out['joints_vel'] = list(joint_states.velocity)
-        out['time'] = joint_states.header.stamp.to_sec()
+
+        if time is None:
+            out['time'] = joint_states.header.stamp.to_sec()
+        else:
+            print(len(self.joint_traj))
+            if len(self.joint_traj) ==0:
+                out['time'] = 0.0
+            else:
+                out['time'] = self.joint_traj[-1]['time']+time
 
         #print('\r'+"LIVE TRAJECTORY FOLLOWER: Uploading Trajectory, %0.1f"%((idx+1)/float(len_traj)*100) +'%' +" complete", end='')
 
-        print('\r', end='')
-        sys.stdout.flush()
-        print (["{0:0.2f}".format(i) for i in joint_pos_deg], end='')
+        print (["{0:0.2f}".format(i) for i in joint_pos_deg])
 
         if self.traj_file is not None:
             self.joint_traj.append(out)
@@ -110,14 +121,41 @@ class Teacher:
                 yaml.dump(self.joint_traj, f, default_flow_style=None)
 
 
+    def on_press(self, key):
+        pass
+
+
+    def on_release(self, key):
+        global restartFlag
+        if key == Key.space:
+            self.get_pos(time=1.5)
+
+        elif key == Key.shift:
+            self.toggle_record = not self.toggle_record
+
+
+
+
+
+
+
 
 
    
 def main(file_name=None):
     try:
+
         rospy.init_node("get_pos", anonymous=True, disable_signals=True)
-        teach=Teacher(file_name)   
+        teach=Teacher(file_name)
+
+        listener = Listener(
+            on_press=teach.on_press,
+            on_release=teach.on_release)
+        listener.start()
+
         teach.set_freedrive_mode(True)
+
+
         teach.save_file()
 
     except KeyboardInterrupt:

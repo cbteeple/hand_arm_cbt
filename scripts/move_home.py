@@ -27,7 +27,7 @@ import numpy as np
 
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
-zero_pos = [0,-90,0,-90,0,0.0]
+zero_pos = [0,-90,0,-90,0,0]
 home_pos = [75, -70, 65, 0, 90, -90]
 
 

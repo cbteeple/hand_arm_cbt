@@ -105,7 +105,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES hand_arm
-  CATKIN_DEPENDS roscpp rospy std_msgs ur_modern_driver pressure_control_ros
+  CATKIN_DEPENDS roscpp rospy std_msgs ur_modern_driver
 #  DEPENDS system_lib
 )
 

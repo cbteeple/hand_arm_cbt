@@ -30,10 +30,6 @@ import matplotlib.pyplot as plt
 
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
-Q1 = [2.2,0,-1.57,0.3,0.3,0.3]
-Q2 = [1.5,0,-1.57,0,0,0]
-Q3 = [1.5,-0.8,0.1,-0.5,-0.5,-1.0]
-
 
 scaler = 1.0
 reset_time = 2.0
@@ -45,22 +41,26 @@ g = FollowJointTrajectoryGoal()
 g.trajectory = JointTrajectory()
 
 
-def getTraj(traj_file):
+def get_traj(traj_file):
     global trajIn
     if traj_file is not None:
         curr_path=os.path.dirname(os.path.abspath(__file__))
-        inFile=os.path.join(curr_path,"..","trajectories","arm",traj_file+".yaml")
+        inFile_rel=os.path.join("trajectories","arm",traj_file+".yaml")
+        inFile=os.path.join(curr_path,"..",inFile_rel)
+        print("Reading Trajectory from file: '%s'"%(inFile_rel))
 
 
         with open(inFile,'r') as f:
             # use safe_load instead of load
             trajIn = yaml.safe_load(f)
             f.close()
+    else:
+        raise("No filename given")
 
 
 def build_traj():
     global g
-    getTraj("Testing")
+    global trajIn
 
     g.trajectory.joint_names = JOINT_NAMES
     joint_states = rospy.wait_for_message("joint_states", JointState)
@@ -69,7 +69,6 @@ def build_traj():
     g.trajectory.points= []
 
     time_offset = trajIn[0]['time'] -reset_time
-    print(time_offset)
 
     curr_pt = JointTrajectoryPoint(positions=joints_pos, velocities=[0]*6, time_from_start=rospy.Duration(0.0))
     g.trajectory.points.append(curr_pt)
@@ -122,7 +121,7 @@ def move1():
 
 
    
-def main():
+def main(file_name=None):
     global arm_client
     global trajIn
     try:
@@ -138,11 +137,11 @@ def main():
             for i, name in enumerate(JOINT_NAMES):
                 JOINT_NAMES[i] = prefix + name
 
-        build_traj()
+        get_traj(file_name)
         print "Please make sure that your robot can move freely between these poses before proceeding!"
         inp = raw_input("Continue? y/n: ")[0]
         if (inp == 'y'):
-            for idx in range(4):
+            for idx in range(1):
                 move1()
         else:
             print "Halting program"
@@ -150,4 +149,12 @@ def main():
         rospy.signal_shutdown("KeyboardInterrupt")
         raise
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        main()
+    elif len(sys.argv) ==2:
+        main(sys.argv[1])
+    else:
+        print("Usage:")
+        print("\tteach.py \t\t- Enable freedrive but don't save")
+        print("\tteach.py [FILENAME]\t- Save a trajectory")
