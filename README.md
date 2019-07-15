@@ -39,17 +39,17 @@ Set a position (*all but the zero position can be set*):
 When using teach mode, the robot will be put into freedrive mode, enabling you to push it around.
 
 - Enable freedrive mode without saving anything:
-`rosrun hand_arm teach.py`
+	- `rosrun hand_arm teach.py`
 
 - Teach the entire trajectory from start to finish 
-`rosrun hand_arm teach.py [INSERT FILENAME]`
+	- `rosrun hand_arm teach.py [INSERT FILENAME]`
 
 - Teach individual waypoints in a trajectory:
-`rosrun hand_arm teach_points.py [INSERT FILENAME]`
-In this mode, use the space bar to save the current position as a point in the trajectory.
+	- `rosrun hand_arm teach_points.py [INSERT FILENAME]`
+	- In this mode, use the space bar to save the current position as a point in the trajectory.
 
 - Replay a trajectory:
-`rosrun hand_arm replay.py [INSERT FILENAME]`
+	- `rosrun hand_arm replay.py [INSERT FILENAME]`
 
 
 
