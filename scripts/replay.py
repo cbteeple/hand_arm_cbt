@@ -32,13 +32,14 @@ JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
 
 scaler = 1.0
-reset_time = 2.0
+reset_time = 10.0
     
 arm_client = None
 trajIn = []
 
 g = FollowJointTrajectoryGoal()
 g.trajectory = JointTrajectory()
+g.trajectory.joint_names = JOINT_NAMES
 
 
 def get_traj(traj_file):
@@ -58,17 +59,33 @@ def get_traj(traj_file):
         raise("No filename given")
 
 
+
+def go_to_start():
+    global g
+    global trajIn
+
+    g.trajectory.points= []
+    
+    joint_states = rospy.wait_for_message("joint_states", JointState)
+    
+
+    curr_pt = JointTrajectoryPoint(positions=joint_states.position, velocities=[0]*6, time_from_start=rospy.Duration(0.0))
+    g.trajectory.points.append(curr_pt)
+    curr_pt = JointTrajectoryPoint(positions=trajIn[0]['joints_pos'], velocities=trajIn[0]['joints_vel'], time_from_start=rospy.Duration(reset_time))
+    g.trajectory.points.append(curr_pt)
+
+
+
 def build_traj():
     global g
     global trajIn
 
-    g.trajectory.joint_names = JOINT_NAMES
     joint_states = rospy.wait_for_message("joint_states", JointState)
     joints_pos = joint_states.position
 
     g.trajectory.points= []
 
-    time_offset = trajIn[0]['time'] -reset_time
+    time_offset = trajIn[0]['time']
 
     curr_pt = JointTrajectoryPoint(positions=joints_pos, velocities=[0]*6, time_from_start=rospy.Duration(0.0))
     g.trajectory.points.append(curr_pt)
@@ -86,7 +103,6 @@ def build_traj():
 
 
 def safe_stop():
-    g.trajectory.joint_names = JOINT_NAMES
     joint_states = rospy.wait_for_message("joint_states", JointState)
     joints_pos = joint_states.position
 
@@ -101,16 +117,13 @@ def safe_stop():
 
 
 
-def move1():
+def execute_traj():
     global joints_pos
     global trajIn
     global g
     try:
-        build_traj()
         arm_client.send_goal(g)
         arm_client.wait_for_result()
-
-
 
     except KeyboardInterrupt:
         arm_client.cancel_goal()
@@ -138,11 +151,16 @@ def main(file_name=None):
                 JOINT_NAMES[i] = prefix + name
 
         get_traj(file_name)
-        print "Please make sure that your robot can move freely between these poses before proceeding!"
-        inp = raw_input("Continue? y/n: ")[0]
+        inp = raw_input("Move to Starting Position? y/n: ")[0]
+        if (inp == 'y'):
+            go_to_start()
+            execute_traj()
+
+        inp = raw_input("Execute Trajectory? y/n: ")[0]
         if (inp == 'y'):
             for idx in range(1):
-                move1()
+                build_traj()
+                execute_traj()
         else:
             print "Halting program"
     except KeyboardInterrupt:
