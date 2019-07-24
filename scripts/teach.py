@@ -86,7 +86,14 @@ class Teacher:
 
         print('\r', end='')
         sys.stdout.flush()
-        print (["{0:0.2f}".format(i) for i in joint_pos_deg], end='')
+        outstr="["
+        for i in joints_pos:
+            outstr+= '%0.4f,'%(i)
+
+        outstr=outstr[:-1]
+        outstr += ']'
+
+        print (outstr, end='')
 
         if self.traj_file is not None:
             self.joint_traj.append(out)

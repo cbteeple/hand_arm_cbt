@@ -21,7 +21,7 @@ import actionlib
 from control_msgs.msg import *
 from trajectory_msgs.msg import *
 from sensor_msgs.msg import JointState
-import pressure_controller_ros.msg
+from pressure_controller_ros.msg import *
 from math import pi
 import yaml
 import os
@@ -35,7 +35,7 @@ scaler = 1.0
 reset_time = 10.0
     
 arm_client = None
-trajIn = []
+arm_trajIn = []
 
 g = FollowJointTrajectoryGoal()
 g.trajectory = JointTrajectory()
@@ -43,7 +43,7 @@ g.trajectory.joint_names = JOINT_NAMES
 
 
 def get_traj(traj_file):
-    global trajIn
+    global arm_trajIn
     if traj_file is not None:
         curr_path=os.path.dirname(os.path.abspath(__file__))
         inFile_rel=os.path.join("trajectories","arm",traj_file+".yaml")
@@ -53,7 +53,7 @@ def get_traj(traj_file):
 
         with open(inFile,'r') as f:
             # use safe_load instead of load
-            trajIn = yaml.safe_load(f)
+            arm_trajIn = yaml.safe_load(f)
             f.close()
     else:
         raise("No filename given")
@@ -62,7 +62,7 @@ def get_traj(traj_file):
 
 def go_to_start():
     global g
-    global trajIn
+    global arm_trajIn
 
     g.trajectory.points= []
     
@@ -71,21 +71,21 @@ def go_to_start():
 
     curr_pt = JointTrajectoryPoint(positions=joint_states.position, velocities=[0]*6, time_from_start=rospy.Duration(0.0))
     g.trajectory.points.append(curr_pt)
-    curr_pt = JointTrajectoryPoint(positions=trajIn[0]['joints_pos'], velocities=trajIn[0]['joints_vel'], time_from_start=rospy.Duration(reset_time))
+    curr_pt = JointTrajectoryPoint(positions=arm_trajIn[0]['joints_pos'], velocities=arm_trajIn[0]['joints_vel'], time_from_start=rospy.Duration(reset_time))
     g.trajectory.points.append(curr_pt)
 
 
 
 def build_traj():
     global g
-    global trajIn
+    global arm_trajIn
 
     joint_states = rospy.wait_for_message("joint_states", JointState)
     joints_pos = joint_states.position
 
     g.trajectory.points= []
 
-    time_offset = trajIn[0]['time']
+    time_offset = arm_trajIn[0]['time']
 
     curr_pt = JointTrajectoryPoint(positions=joints_pos, velocities=[0]*6, time_from_start=rospy.Duration(0.0))
     g.trajectory.points.append(curr_pt)
@@ -94,7 +94,7 @@ def build_traj():
     traj_pts=[]
     traj_time=[]
 
-    for point in trajIn:
+    for point in arm_trajIn:
         curr_pt = JointTrajectoryPoint(positions=point['joints_pos'], velocities=point['joints_vel'], time_from_start=rospy.Duration((point['time']-time_offset)*scaler))
         g.trajectory.points.append(curr_pt)
         traj_pts.append(point['joints_pos'])
@@ -119,7 +119,7 @@ def safe_stop():
 
 def execute_traj():
     global joints_pos
-    global trajIn
+    global arm_trajIn
     global g
     try:
         arm_client.send_goal(g)
@@ -136,7 +136,7 @@ def execute_traj():
    
 def main(file_name=None):
     global arm_client
-    global trajIn
+    global arm_trajIn
     try:
         rospy.init_node("test_move", anonymous=True, disable_signals=True)
         arm_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)

@@ -3,24 +3,20 @@
 
 
 <!-- get the arguments from  -->
-<arg name="profile" default="default" doc="Configuration profile to use" />
+<arg name="traj_profile" doc="Configuration profile to use" />
 <arg name="debug" default="False" doc="Whether debug is on" />
-<arg name="plot_profile" default="2channels_set" doc="The plotting config profile" />
-<arg name="traj_profile" default="planar2seg/planar2seg_wf" doc="Configuration profile to use" />
 <arg name="speed_factor" default="1.0" doc="the speed to run the trajectory at" />
+<arg name="num_reps" default="1" doc="The number of reps" />
 
 
 <!-- Load controller settings -->
-  <group>
 
-    <!-- Load the config node and settings -->
-    <node name="traj_send_node" pkg="pressure_controller_ros" type="send_traj.py" respawn="false"
+    <node name="pick_and_place_node" pkg="hand_arm" type="pick_place.py" respawn="false"
     	output="screen">
-    	<rosparam file="$(find pressure_trajectory_ros)/traj_generated/$(arg traj_profile)_raw.yaml" command="load"/>
-      	<param name="traj_profile" type="str" value="$(arg traj_profile)_raw" />
+      	<param name="traj_profile" type="str" value="$(arg traj_profile)" />
       	<param name="speed_factor" type="double" value="$(arg speed_factor)" />
+      	<param name="num_reps" type="int" value="$(arg num_reps)" />
     </node>
-  </group>
 
 
 </launch>
