@@ -28,7 +28,7 @@ import numpy as np
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
 zero_pos = [0,-90,0,-90,0,0]
-home_pos = [75, -70, 65, 0, 90, -90]
+home_pos = [i*180.0/pi for i in [1.5707,-1.3090,1.8383,-0.5236,1.5709,-1.5712]]
 
 
 scaler = 1.0
