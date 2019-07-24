@@ -20,6 +20,11 @@ A top-level package to coordinate a robot with a soft pneumatic hand.
 	- [matplotlib](https://matplotlib.org/) (`pip install matplotlib`)
 	- [pynput](https://pypi.org/project/pynput/) (`pip install pynput`)
 	- [yaml](https://pyyaml.org/wiki/PyYAMLDocumentation) (`pip install pyyaml`)
+	
+## How to Install
+1. Add this package to your `workspace/src` folder.
+2. Run `catkin_make` to enable the custom python modules in this package to work
+
 
 ## How To Use
 ### Move to specified joint positions:
@@ -34,6 +39,7 @@ Move to some other position:
 
 Set a position (*all but the zero position can be set*):
 `rosrun hand_arm move_home.py set [POSITION_NUMBER]`
+
 
 ### Teach the robot:
 When using teach mode, the robot will be put into freedrive mode, enabling you to push it around.
@@ -50,6 +56,9 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 
 - Replay a trajectory:
 	- `rosrun hand_arm replay.py [INSERT FILENAME]`
+	
+- Do pick and place:
+	- `roslaunch hand_arm pick-and-place.launch traj_profile:=pick_front speed_factor:=1.0 num_reps:=20`
 
 
 
