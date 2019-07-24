@@ -43,9 +43,9 @@ class trajSender:
         self.reset_time = 10.0
             
         # Load up the arm client
-        self.arm_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
+        self.traj_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
         print("Waiting for servers...")
-        self.arm_client.wait_for_server()
+        self.traj_client.wait_for_server()
         print ("Connected to servers")
 
         self.arm_trajIn = []
@@ -113,7 +113,7 @@ class trajSender:
 
 
 
-    def go_to_start(self, goal, reset_time):
+    def go_to_start(self, goal, reset_time, blocking=True):
 
         goal_tmp = copy.deepcopy(self.goal_blank)
                 
@@ -129,7 +129,7 @@ class trajSender:
 
         goal_tmp.trajectory.points.append(first_pt)
 
-        self.execute_traj( goal_tmp )
+        self.execute_traj( goal_tmp, blocking)
 
 
 
@@ -145,17 +145,21 @@ class trajSender:
         curr_pt = JointTrajectoryPoint(positions=joint_states.position, velocities=[0]*6, time_from_start=rospy.Duration(1.0))
         goal_stop.trajectory.points.append(curr_pt)
 
-        self.arm_client.send_goal(goal_stop)
+        self.traj_client.send_goal(goal_stop)
 
 
 
-    def execute_traj(self, goal):
+    def execute_traj(self, goal, blocking=True):
         try:
-            self.arm_client.send_goal(goal)
-            self.arm_client.wait_for_result()
+            self.traj_client.send_goal(goal)
+
+            if blocking:
+                self.traj_client.wait_for_result()
+            else:
+                self.traj_client
 
         except KeyboardInterrupt:
-            self.arm_client.cancel_goal()
+            self.traj_client.cancel_goal()
             self.safe_stop()
             raise
         except:
