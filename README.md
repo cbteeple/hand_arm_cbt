@@ -20,6 +20,11 @@ A top-level package to coordinate a robot with a soft pneumatic hand.
 	- [matplotlib](https://matplotlib.org/) (`pip install matplotlib`)
 	- [pynput](https://pypi.org/project/pynput/) (`pip install pynput`)
 	- [yaml](https://pyyaml.org/wiki/PyYAMLDocumentation) (`pip install pyyaml`)
+	
+## How to Install
+1. Add this package to your `workspace/src` folder.
+2. Run `catkin_make` to enable the custom python modules in this package to work
+
 
 ## How To Use
 ### Move to specified joint positions:
