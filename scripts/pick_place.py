@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 
 from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
 from hand_arm_cbt.arm_mover import trajSender as ur_traj_sender
+from hand_arm_cbt.arm_moveit import MoveItPythonInteface as ur_traj_sender_moveit
 
 
 reset_time = 2.0
@@ -42,26 +43,6 @@ filepath_default = os.path.join(curr_path,'..','trajectories')
 
 
 
-# Set up the operations that the ahand and arm will do using filename suffixes
-operations = []
-
-# Move to object
-operations.append({'arm': 'pre' , 'hand': 'startup'})
-
-# Grasp
-operations.append({'arm': None , 'hand': 'grasp'})
-
-# Move Object to target
-operations.append({'arm': 'move' , 'hand': 'release'})
-
-# Release
-operations.append({'arm': None , 'hand': 'release'})
-
-#Move Object to target
-operations.append({'arm': 'post' , 'hand': None})
-
-
-
 
 class pickPlace:
     def __init__(self):
@@ -69,31 +50,47 @@ class pickPlace:
         self.speed_factor = rospy.get_param(rospy.get_name()+'/speed_factor',1.0)
         self.num_reps = rospy.get_param(rospy.get_name()+'/num_reps',1)
 
-        # Create the arm object
-        self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
+        # Read the trajectory configuration file
+        self.filepath = os.path.join(filepath_default,self.traj_profile)
+        config_file =   os.path.join(self.filepath,'sequence.yaml') 
+
+        with open(config_file,'r') as f:
+            # use safe_load instead of load
+            self.operations = yaml.safe_load(f)
+            f.close()
+
+        # Create the arm objects
+        setup = self.operations['setup']
+        if setup['arm_traj_space'] == 'joint':
+            self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
+        elif setup['arm_traj_space'] == 'cartesian':
+            self.arm_sender = ur_traj_sender_moveit()
+        else:
+            print('Nonstandard arm trajectory space')
+            self.arm_sender = None
+            raise
 
         # Create the pneumatic hand object
-        self.hand_sender = pneu_traj_sender(self.speed_factor)
+        if setup['hand_traj_space'] == 'pressure':
+            self.hand_sender = pneu_traj_sender(self.speed_factor)
+        else:
+            print('Nonstandard hand trajectory space')
+            raise
 
-        self.build_sequence()
 
-
-    def build_sequence(self):
-        # Build the trajectories
+    def get_sequence(self):
+        # get the trajectories
         self.operation_sequence = []
 
-        filepath = os.path.join(filepath_default,self.traj_profile)
-
-        for move in operations:
+        for move in self.operations['operations']:
             out = {}
             out['arm']  = None
             out['hand'] = None
-            if move['arm'] is not None:
-                 out['arm'] = self.arm_sender.load_trajectory(self.traj_profile+'_'+move['arm'], filepath)
+            if move['arm']:
+                 out['arm'] = self.arm_sender.load_trajectory(move['arm'], self.filepath)
 
-            if move['hand'] is not None:
-                out['hand'] = self.hand_sender.load_trajectory(self.traj_profile+'_'+move['hand'], filepath)
-
+            if move['hand']:
+                out['hand'] = self.hand_sender.load_trajectory(move['hand'], self.filepath)
 
             self.operation_sequence.append(out)
 
@@ -107,13 +104,30 @@ class pickPlace:
         self.arm_sender.traj_client.wait_for_result()
 
 
-    def excecute_sequence(self):
-        for movement in self.operation_sequence:
-            if movement['hand'] is not None:
-                self.hand_sender.execute_traj(movement['hand'], blocking=False)
 
+    def plan_sequence(self):
+        # build the trajectories
+        self.operation_plans = []
+        
+        for movement in self.operation_sequence:
+            out = {}
+            out['arm']  = None
+            out['hand'] = None
             if movement['arm'] is not None:
-                self.arm_sender.execute_traj(movement['arm'], blocking=False)
+                out['arm'] = self.arm_sender.build_traj(movement['arm'])
+            if movement['hand'] is not None:
+                out['hand'] = self.hand_sender.build_traj(movement['hand'])
+
+            self.operation_plans.append(out)
+
+
+    def excecute_sequence(self):
+        for plan in self.operation_plans:
+            if plan['hand'] is not None:
+                self.hand_sender.execute_traj(plan['hand'], blocking=False)
+
+            if plan['arm'] is not None:
+                self.arm_sender.execute_traj(plan['arm'], blocking=False)
 
             self.hand_sender.traj_client.wait_for_result()
             self.arm_sender.traj_client.wait_for_result()
@@ -139,10 +153,12 @@ def main(file_name=None):
         rospy.init_node("pick_and_place", anonymous=True, disable_signals=True)
 
         node = pickPlace()
+        node.get_sequence()
 
         # Go to the start
         inp = raw_input("Move to Starting Position? (Press ENTER)")
         node.go_to_start()
+        node.plan_sequence()
 
         # Excecute the trajectory the desired number of times
         node.rep_sequence()

@@ -1,0 +1,23 @@
+setup:
+    arm_traj_space: 'joint'
+    hand_traj_space: 'pressure'
+
+startup:
+    arm: 'pre'
+    hand: 'startup'
+
+operations:
+    -   arm:  'pre'
+        hand: 'startup'
+
+    -   arm:  False
+        hand: 'grasp'
+
+    -   arm:  'move'
+        hand:  False
+
+    -   arm:  False
+        hand: 'release'
+
+    -   arm:  'post'
+        hand: False
