@@ -153,7 +153,7 @@ class trajSender:
             if blocking:
                 self.traj_client.wait_for_result()
             else:
-                self.traj_client
+                pass
 
         except KeyboardInterrupt:
             self.traj_client.cancel_goal()

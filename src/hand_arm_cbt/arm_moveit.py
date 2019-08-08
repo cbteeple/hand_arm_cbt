@@ -47,6 +47,9 @@ import yaml
 import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
+from trajectory_msgs.msg import JointTrajectory
+
 from math import pi
 from std_msgs.msg import String
 from moveit_msgs.msg import RobotState
@@ -55,6 +58,12 @@ from moveit_commander.conversions import pose_to_list
 ## END_SUB_TUTORIAL
 
 filepath_default = os.path.join('..','trajectories')
+
+
+JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
+               'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
+
+
 
 def all_close(goal, actual, tolerance):
     """
@@ -81,7 +90,7 @@ def all_close(goal, actual, tolerance):
 
 class MoveItPythonInteface(object):
     """MoveGroupPythonIntefaceTutorial"""
-    def __init__(self):
+    def __init__(self, joint_names=JOINT_NAMES):
         super(MoveItPythonInteface, self).__init__()
 
         ## First initialize `moveit_commander`_ and a `rospy`_ node:
@@ -102,7 +111,8 @@ class MoveItPythonInteface(object):
 
 
         # Load up the arm client
-        self.traj_client = actionlib.SimpleActionClient('/move_group', moveit_msgs.msg.MoveGroupAction)
+        #self.traj_client = actionlib.SimpleActionClient('/move_group', moveit_msgs.msg.MoveGroupAction)
+        self.traj_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
         print("Waiting for servers...")
         self.traj_client.wait_for_server()
         print ("Connected to servers")
@@ -128,6 +138,24 @@ class MoveItPythonInteface(object):
         # Misc variables
         self.box_name = ''
         self.last_state = None
+
+
+        self.goal_blank = FollowJointTrajectoryGoal()
+        self.goal_blank.trajectory = JointTrajectory()
+        self.get_joint_names(joint_names)
+
+        
+
+
+    def get_joint_names(self, joint_names):
+        parameters = rospy.get_param(None)
+        index = str(parameters).find('prefix')
+        if (index > 0):
+            prefix = str(parameters)[index+len("prefix': '"):(index+len("prefix': '")+str(parameters)[index+len("prefix': '"):-1].find("'"))]
+            for i, name in enumerate(joint_names):
+                joint_names[i] = prefix + name
+
+        self.goal_blank.trajectory.joint_names = joint_names
 
 
 
@@ -323,7 +351,7 @@ class MoveItPythonInteface(object):
         ## END_SUB_TUTORIAL
 
 
-    def execute_traj(self, plan, blocking=False):
+    def execute_traj_moveit(self, plan, blocking=False):
         # Copy class variables to local variables to make the web tutorials more clear.
         # In practice, you should use the class variables directly unless you have a good
         # reason not to.
@@ -342,11 +370,33 @@ class MoveItPythonInteface(object):
         # ====================================================
 
 
-        self.move_group.execute(plan, wait=True)
+        self.move_group.execute(plan, wait=False)
 
         ## **Note:** The robot's current joint state must be within some tolerance of the
         ## first waypoint in the `RobotTrajectory`_ or ``execute()`` will fail
         ## END_SUB_TUTORIAL
+
+
+
+    def execute_traj(self, plan, blocking=False):
+
+        goal = copy.deepcopy(self.goal_blank)
+        goal.trajectory.points = plan.joint_trajectory.points
+        try:
+            self.traj_client.send_goal(goal)
+
+            if blocking:
+                self.traj_client.wait_for_result()
+            else:
+                pass
+
+        except KeyboardInterrupt:
+            self.traj_client.cancel_goal()
+            self.safe_stop()
+            raise
+        except:
+            raise
+
 
 
     def wait_for_state_update(self, box_name=None, box_is_attached=False, timeout=4):

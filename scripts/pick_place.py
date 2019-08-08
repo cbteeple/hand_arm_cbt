@@ -64,7 +64,7 @@ class pickPlace:
         if setup['arm_traj_space'] == 'joint':
             self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
         elif setup['arm_traj_space'] == 'cartesian':
-            self.arm_sender = ur_traj_sender_moveit()
+            self.arm_sender = ur_traj_sender_moveit(JOINT_NAMES)
         else:
             print('Nonstandard arm trajectory space')
             self.arm_sender = None

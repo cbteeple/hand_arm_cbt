@@ -14,7 +14,7 @@ operations:
         hand: 'grasp'
 
     -   arm:  '0-move'
-        hand:  False
+        hand:  'move'
 
     -   arm:  False
         hand: 'release'
@@ -29,7 +29,7 @@ operations:
         hand: 'grasp'
 
     -   arm:  '1-move'
-        hand:  False
+        hand:  'move'
 
     -   arm:  False
         hand: 'release'
