@@ -41,6 +41,8 @@ JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
 curr_path=os.path.dirname(os.path.abspath(__file__))
 filepath_default = os.path.join(curr_path,'..','trajectories')
 
+Fake = False
+
 
 
 
@@ -127,7 +129,10 @@ class pickPlace:
                 self.hand_sender.execute_traj(plan['hand'], blocking=False)
 
             if plan['arm'] is not None:
-                self.arm_sender.execute_traj(plan['arm'], blocking=False)
+                if not Fake:
+                    self.arm_sender.execute_traj(plan['arm'], blocking=False)
+                else:
+                    self.arm_sender.display_trajectory(plan['arm'])
 
             self.hand_sender.traj_client.wait_for_result()
             self.arm_sender.traj_client.wait_for_result()

@@ -48,7 +48,7 @@ import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
-from trajectory_msgs.msg import JointTrajectory
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from math import pi
 from std_msgs.msg import String
@@ -317,6 +317,7 @@ class MoveItPythonInteface(object):
 
         self.last_state = self.robot.get_current_state()
         self.last_state.joint_state.position=plan.joint_trajectory.points[-1].positions
+        self.last_state.joint_state.velocity=[0]*6
         
         # Note: We are just planning, not asking move_group to actually move the robot yet:
         return plan, fraction
@@ -382,6 +383,14 @@ class MoveItPythonInteface(object):
 
         goal = copy.deepcopy(self.goal_blank)
         goal.trajectory.points = plan.joint_trajectory.points
+
+        curr_pt = JointTrajectoryPoint( positions=plan.joint_trajectory.points[-1].positions,
+                                        velocities=[0]*6,
+                                        time_from_start = goal.trajectory.points[-1].time_from_start + rospy.Duration(0.25) )
+
+
+        goal.trajectory.points.append(curr_pt)
+
         try:
             self.traj_client.send_goal(goal)
 
