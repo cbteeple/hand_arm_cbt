@@ -1,0 +1,2 @@
+planner_id: RRTstarkConfigDefault # Planner to use
+planning_time: 0.2 # [seconds]

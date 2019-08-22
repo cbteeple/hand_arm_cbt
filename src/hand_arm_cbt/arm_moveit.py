@@ -147,6 +147,20 @@ class MoveItPythonInteface(object):
         
 
 
+    def config_planner(self, config_file):
+
+        with open(config_file,'r') as f:
+            # use safe_load instead of load
+            movit_config = yaml.safe_load(f)
+            f.close()
+
+        print(movit_config)
+
+        self.move_group.set_planner_id(movit_config['planner_id'])
+        self.move_group.set_planning_time(movit_config['planning_time'])
+
+
+
     def get_joint_names(self, joint_names):
         parameters = rospy.get_param(None)
         index = str(parameters).find('prefix')

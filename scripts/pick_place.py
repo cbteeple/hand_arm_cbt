@@ -39,7 +39,8 @@ JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
 
 curr_path=os.path.dirname(os.path.abspath(__file__))
-filepath_default = os.path.join(curr_path,'..','trajectories')
+filepath_traj = os.path.join(curr_path,'..','trajectories')
+filepath_config = os.path.join(curr_path,'..','config')
 
 Fake = False
 
@@ -52,8 +53,10 @@ class pickPlace:
         self.speed_factor = rospy.get_param(rospy.get_name()+'/speed_factor',1.0)
         self.num_reps = rospy.get_param(rospy.get_name()+'/num_reps',1)
 
+        
+
         # Read the trajectory configuration file
-        self.filepath = os.path.join(filepath_default,self.traj_profile)
+        self.filepath = os.path.join(filepath_traj,self.traj_profile)
         config_file =   os.path.join(self.filepath,'sequence.yaml') 
 
         with open(config_file,'r') as f:
@@ -67,6 +70,9 @@ class pickPlace:
             self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
         elif setup['arm_traj_space'] == 'cartesian':
             self.arm_sender = ur_traj_sender_moveit(JOINT_NAMES)
+
+            #configure the planners based on the config file
+            self.arm_sender.config_planner(os.path.join(filepath_config,'moveit_config.yaml'))
         else:
             print('Nonstandard arm trajectory space')
             self.arm_sender = None
