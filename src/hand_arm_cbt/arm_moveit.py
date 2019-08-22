@@ -199,8 +199,6 @@ class MoveItPythonInteface(object):
 
 
     def build_traj(self, arm_trajIn = None):
-        time_offset = arm_trajIn[0]['time']
-
         waypoints = []
 
         wpose = pose_goal = geometry_msgs.msg.Pose()
@@ -396,14 +394,14 @@ class MoveItPythonInteface(object):
     def execute_traj(self, plan, blocking=False):
 
         goal = copy.deepcopy(self.goal_blank)
-        goal.trajectory.points = plan.joint_trajectory.points
+        goal.trajectory.points = copy.deepcopy(plan.joint_trajectory.points)
 
         curr_pt = JointTrajectoryPoint( positions=plan.joint_trajectory.points[-1].positions,
                                         velocities=[0]*6,
-                                        time_from_start = goal.trajectory.points[-1].time_from_start + rospy.Duration(0.25) )
+                                        time_from_start = goal.trajectory.points[-1].time_from_start + rospy.Duration(0.5) )
 
 
-        goal.trajectory.points.append(curr_pt)
+        goal.trajectory.points.append(copy.deepcopy(curr_pt))
 
         try:
             self.traj_client.send_goal(goal)

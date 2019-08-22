@@ -56,12 +56,14 @@ class pickPlace:
         
 
         # Read the trajectory configuration file
-        self.filepath = os.path.join(filepath_traj,self.traj_profile)
-        config_file =   os.path.join(self.filepath,'sequence.yaml') 
+        self.filepath = os.path.join(filepath_traj)
+        config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml') 
 
         with open(config_file,'r') as f:
             # use safe_load instead of load
-            self.operations = yaml.safe_load(f)
+            self.traj_config = yaml.safe_load(f)
+
+            self.operations = self.traj_config['sequence']
             f.close()
 
         # Create the arm objects
@@ -95,10 +97,10 @@ class pickPlace:
             out['arm']  = None
             out['hand'] = None
             if move['arm']:
-                 out['arm'] = self.arm_sender.load_trajectory(move['arm'], self.filepath)
+                 out['arm'] = self.traj_config['arm'].get(move['arm'], None)
 
             if move['hand']:
-                out['hand'] = self.hand_sender.load_trajectory(move['hand'], self.filepath)
+                out['hand'] = self.traj_config['hand'].get(move['hand'], None)
 
             self.operation_sequence.append(out)
 
