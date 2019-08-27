@@ -158,6 +158,8 @@ class MoveItPythonInteface(object):
 
         self.move_group.set_planner_id(movit_config['planner_id'])
         self.move_group.set_planning_time(movit_config['planning_time'])
+        self.move_group.allow_replanning(True)
+        self.move_group.set_num_planning_attempts(movit_config.get('num_planning_attempts',1))
 
 
 
@@ -201,7 +203,7 @@ class MoveItPythonInteface(object):
     def build_traj(self, arm_trajIn = None):
         waypoints = []
 
-        wpose = pose_goal = geometry_msgs.msg.Pose()
+        wpose = geometry_msgs.msg.Pose()
 
         
         for point in arm_trajIn:
@@ -221,7 +223,9 @@ class MoveItPythonInteface(object):
 
 
     def go_to_start(self, goal, reset_time, blocking=True):
-        wpose = pose_goal = geometry_msgs.msg.Pose()
+
+        wpose = geometry_msgs.msg.Pose()
+
         wpose.position.x =    goal[0]['position'][0]
         wpose.position.y =    goal[0]['position'][1]
         wpose.position.z =    goal[0]['position'][2]
@@ -229,7 +233,14 @@ class MoveItPythonInteface(object):
         wpose.orientation.y = goal[0]['orientation'][1]
         wpose.orientation.z = goal[0]['orientation'][2]
         wpose.orientation.w = goal[0]['orientation'][3]
-        self.go_to_pose_goal(wpose)      
+
+        self.move_group.set_start_state_to_current_state()
+        self.move_group.set_joint_value_target(wpose)
+        plan = self.move_group.go(wait=True)
+    
+        # Calling `stop()` ensures that there is no residual movement
+        self.move_group.stop()
+        #self.go_to_pose_goal(wpose)      
                        
 
     def go_to_joint_state(self, joint_goal_in = None):
@@ -285,22 +296,25 @@ class MoveItPythonInteface(object):
             pose_goal.position.z = 0.45
 
 
+        self.move_group.clear_pose_targets()
         self.move_group.set_pose_target(pose_goal)
 
         ## Now, we call the planner to compute the plan and execute it.
         plan = self.move_group.go(wait=True)
+        
+
+
         # Calling `stop()` ensures that there is no residual movement
-        #self.move_group.stop()
+        self.move_group.stop()
         # It is always good to clear your targets after planning with poses.
         # Note: there is no equivalent function for clear_joint_value_targets()
-        # self.move_group.clear_pose_targets()
+        self.move_group.clear_pose_targets()
 
         ## END_SUB_TUTORIAL
 
         # For testing:
         # Note that since this section of code will not be included in the tutorials
         # we use the class variable rather than the copied state variable
-        #current_pose = self.move_group.get_current_pose().pose
         #return all_close(pose_goal, current_pose, 0.01)
 
 

@@ -1,2 +1,5 @@
-planner_id: RRTstarkConfigDefault # Planner to use
-planning_time: 0.2 # [seconds]
+planner_id: RRTConnectkConfigDefault
+    #RRTConnectkConfigDefault 
+    #RRTstarkConfigDefault
+planning_time: 1.0        #[seconds
+num_planning_attempts: 10 #[number]
