@@ -236,11 +236,10 @@ class MoveItPythonInteface(object):
 
         self.move_group.set_start_state_to_current_state()
         self.move_group.set_joint_value_target(wpose)
-        plan = self.move_group.go(wait=True)
-    
-        # Calling `stop()` ensures that there is no residual movement
-        self.move_group.stop()
-        #self.go_to_pose_goal(wpose)      
+        plan = self.move_group.plan()
+
+        self.execute_traj(plan,blocking)
+     
                        
 
     def go_to_joint_state(self, joint_goal_in = None):
