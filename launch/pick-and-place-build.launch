@@ -3,7 +3,7 @@
 
 
 <!-- get the arguments from  -->
-<arg name="traj_profile" doc="Configuration profile to use" />
+<arg name="file" doc="Configuration profile to use" />
 
 
 <!-- Load controller settings -->

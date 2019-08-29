@@ -7,6 +7,7 @@
 <arg name="debug" default="False" doc="Whether debug is on" />
 <arg name="speed_factor" default="1.0" doc="the speed to run the trajectory at" />
 <arg name="num_reps" default="1" doc="The number of reps" />
+<arg name="replan" default="false" doc="The number of reps" />
 
 
 <!-- Load controller settings -->
@@ -16,6 +17,7 @@
       	<param name="traj_profile" type="str" value="$(arg traj_profile)" />
       	<param name="speed_factor" type="double" value="$(arg speed_factor)" />
       	<param name="num_reps" type="int" value="$(arg num_reps)" />
+      	<param name="replan" type="bool" value="$(arg replan)" />
     </node>
 
 
