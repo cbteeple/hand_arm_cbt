@@ -39,6 +39,7 @@ JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
 
 curr_path=os.path.dirname(os.path.abspath(__file__))
 filepath_traj = os.path.join(curr_path,'..','trajectories')
+filepath_out = os.path.join(curr_path,'..','trajectories')
 filepath_config = os.path.join(curr_path,'..','config')
 
 Fake = False
@@ -80,17 +81,29 @@ class pickPlacePlan:
 
     def plan_segments(self):
         # build the trajectories
-        planned_segments = {}
+        self.planned_segments = {}
         for segment_name in self.arm_segs:
-            planned_segments[segment_name] = self.arm_sender.build_traj(self.arm_segs[segment_name])
+            self.planned_segments[segment_name] = self.arm_sender.build_traj(self.arm_segs[segment_name])
 
-
-        print(planned_segments)
-
+   
 
 
     def save_plan(self):
-        pass
+        self.traj_config['arm'] = self.planned_segments
+        self.traj_config['sequence']['setup']['arm_traj_space'] = 'joint-planned'
+
+        out_file =   os.path.join(filepath_out,self.traj_profile+'_planned.yaml')
+
+        if not os.path.exists(os.path.dirname(out_file)):
+            try:
+                os.makedirs(os.path.dirname(out_file))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+
+      
+        with open(out_file, 'w+') as f:
+            yaml.dump(self.traj_config, f, default_flow_style=None)
 
            
   
