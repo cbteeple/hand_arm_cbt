@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+
+
+<!-- get the arguments from  -->
+<arg name="traj" doc="Configuration profile to use" />
+
+
+<!-- Load controller settings -->
+
+    <node name="pick_place_plan_node" pkg="hand_arm" type="pick_place_plan.py" respawn="false"
+    	output="screen">
+      	<param name="traj" type="str" value="$(arg traj)" />
+    </node>
+
+
+</launch>

@@ -90,7 +90,7 @@ def all_close(goal, actual, tolerance):
 
 class MoveItPythonInteface(object):
     """MoveGroupPythonIntefaceTutorial"""
-    def __init__(self, joint_names=JOINT_NAMES):
+    def __init__(self, joint_names=JOINT_NAMES, non_excecuting = True):
         super(MoveItPythonInteface, self).__init__()
 
         ## First initialize `moveit_commander`_ and a `rospy`_ node:
@@ -111,11 +111,14 @@ class MoveItPythonInteface(object):
 
 
         # Load up the arm client
-        #self.traj_client = actionlib.SimpleActionClient('/move_group', moveit_msgs.msg.MoveGroupAction)
-        self.traj_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
-        print("Waiting for servers...")
-        self.traj_client.wait_for_server()
-        print ("Connected to servers")
+        if non_excecuting:
+            #self.traj_client = actionlib.SimpleActionClient('/move_group', moveit_msgs.msg.MoveGroupAction)
+            self.traj_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
+            print("Waiting for servers...")
+            self.traj_client.wait_for_server()
+            print ("Connected to servers")
+        else:
+            self.traj_client = None
 
 
         # We can get the name of the reference frame for this robot:
@@ -405,6 +408,10 @@ class MoveItPythonInteface(object):
 
 
     def execute_traj(self, plan, blocking=False):
+
+        if self.traj_client is None:
+            print("You cannot call execute_traj with the 'use_traj_client' option set True")
+            raise
 
         goal = copy.deepcopy(self.goal_blank)
         goal.trajectory.points = copy.deepcopy(plan.joint_trajectory.points)
