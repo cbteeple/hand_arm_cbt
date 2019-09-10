@@ -47,7 +47,7 @@ import yaml
 import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
-from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal, FollowJointTrajectory
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from math import pi
