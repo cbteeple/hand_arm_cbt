@@ -146,6 +146,9 @@ class trajSender:
 
 
 
+
+
+
     def execute_traj(self, goal, blocking=True):
         try:
             self.traj_client.send_goal(goal)

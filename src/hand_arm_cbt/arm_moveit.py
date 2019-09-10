@@ -47,7 +47,7 @@ import yaml
 import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
-from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal, FollowJointTrajectory
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from math import pi
@@ -330,6 +330,7 @@ class MoveItPythonInteface(object):
         # ignoring the check for infeasible jumps in joint space, which is sufficient
         # for this tutorial.
 
+
         if from_last:
             if self.last_state:
                 self.move_group.set_start_state(self.last_state)
@@ -406,13 +407,7 @@ class MoveItPythonInteface(object):
         ## END_SUB_TUTORIAL
 
 
-
-    def execute_traj(self, plan, blocking=False):
-
-        if self.traj_client is None:
-            print("You cannot call execute_traj with the 'use_traj_client' option set True")
-            raise
-
+    def convert_traj(self, plan):
         goal = copy.deepcopy(self.goal_blank)
         goal.trajectory.points = copy.deepcopy(plan.joint_trajectory.points)
 
@@ -422,6 +417,25 @@ class MoveItPythonInteface(object):
 
 
         goal.trajectory.points.append(copy.deepcopy(curr_pt))
+
+        return goal
+
+
+
+
+    def execute_traj(self, goal_in, blocking=False):
+
+        if self.traj_client is None:
+            print("You cannot call execute_traj with the 'use_traj_client' option set True")
+            raise
+
+
+        if type(goal_in) is moveit_msgs.RobotTrajectory:
+            goal = convert_traj(goal_in)
+
+        if type(goal_in) is FollowJointTrajectoryGoal:
+            goal = goal_in
+
 
         try:
             self.traj_client.send_goal(goal)

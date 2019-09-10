@@ -84,7 +84,7 @@ class pickPlacePlan:
         # build the trajectories
         self.planned_segments = {}
         for segment_name in self.arm_segs:
-            self.planned_segments[segment_name] = self.arm_sender.build_traj(self.arm_segs[segment_name])
+            self.planned_segments[segment_name] = self.arm_sender.convert_traj(self.arm_sender.build_traj(self.arm_segs[segment_name]))
 
    
 

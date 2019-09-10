@@ -63,7 +63,7 @@ class pickPlace:
         if (not exist(config_file)) or self.replan:
             self.replan = True
             config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml')
-            print('Planning cartesian trajectory live')
+            print('Planning trajectory from scratch')
 
         with open(config_file,'r') as f:
 
@@ -78,8 +78,9 @@ class pickPlace:
 
         # Create the arm objects
         setup = self.operations['setup']
-        if 'joint' in setup['arm_traj_space']:
+        if (setup['arm_traj_space']== 'joint') or (setup['arm_traj_space']== 'joint-planned'):
             self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
+
         elif setup['arm_traj_space'] == 'cartesian':
             self.arm_sender = ur_traj_sender_moveit(JOINT_NAMES)
 
