@@ -52,23 +52,33 @@ class pickPlace:
         self.traj_profile = rospy.get_param(rospy.get_name()+'/traj_profile')
         self.speed_factor = rospy.get_param(rospy.get_name()+'/speed_factor',1.0)
         self.num_reps = rospy.get_param(rospy.get_name()+'/num_reps',1)
+        self.replan = rospy.get_param(rospy.get_name()+'/replan',False)
 
         
 
         # Read the trajectory configuration file
         self.filepath = os.path.join(filepath_traj)
-        config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml') 
+
+        config_file =   os.path.join(self.filepath,self.traj_profile+'_planned.traj')
+        if (not exist(config_file)) or self.replan:
+            self.replan = True
+            config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml')
+            print('Planning cartesian trajectory live')
 
         with open(config_file,'r') as f:
-            # use safe_load instead of load
-            self.traj_config = yaml.safe_load(f)
+
+            if config_file.endswith('.traj'):
+                self.traj_config = pickle.load(f)
+            else:
+                self.traj_config = yaml.safe_load(f)
 
             self.operations = self.traj_config['sequence']
             f.close()
 
+
         # Create the arm objects
         setup = self.operations['setup']
-        if setup['arm_traj_space'] == 'joint':
+        if 'joint' in setup['arm_traj_space']:
             self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
         elif setup['arm_traj_space'] == 'cartesian':
             self.arm_sender = ur_traj_sender_moveit(JOINT_NAMES)
@@ -116,19 +126,20 @@ class pickPlace:
 
 
     def plan_sequence(self):
-        # build the trajectories
-        self.operation_plans = []
-        
-        for movement in self.operation_sequence:
-            out = {}
-            out['arm']  = None
-            out['hand'] = None
-            if movement['arm'] is not None:
-                out['arm'] = self.arm_sender.build_traj(movement['arm'])
-            if movement['hand'] is not None:
-                out['hand'] = self.hand_sender.build_traj(movement['hand'])
+        if self.replan:
+            # build the trajectories
+            self.operation_plans = []
+            
+            for movement in self.operation_sequence:
+                out = {}
+                out['arm']  = None
+                out['hand'] = None
+                if movement['arm'] is not None:
+                    out['arm'] = self.arm_sender.build_traj(movement['arm'])
+                if movement['hand'] is not None:
+                    out['hand'] = self.hand_sender.build_traj(movement['hand'])
 
-            self.operation_plans.append(out)
+                self.operation_plans.append(out)
 
 
     def excecute_sequence(self):

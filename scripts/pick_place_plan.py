@@ -24,6 +24,7 @@ from sensor_msgs.msg import JointState
 from pressure_controller_ros.msg import *
 from math import pi
 import yaml
+import pickle
 import os
 import sys
 import matplotlib.pyplot as plt
@@ -92,7 +93,7 @@ class pickPlacePlan:
         self.traj_config['arm'] = self.planned_segments
         self.traj_config['sequence']['setup']['arm_traj_space'] = 'joint-planned'
 
-        out_file =   os.path.join(filepath_out,self.traj_profile+'_planned.yaml')
+        out_file =   os.path.join(filepath_out,self.traj_profile+'_planned.traj')
 
         if not os.path.exists(os.path.dirname(out_file)):
             try:
@@ -103,7 +104,8 @@ class pickPlacePlan:
 
       
         with open(out_file, 'w+') as f:
-            yaml.dump(self.traj_config, f, default_flow_style=None)
+            pickle.dump(self.traj_config, f)
+            #yaml.dump(self.traj_config, f, default_flow_style=None)
 
            
   
