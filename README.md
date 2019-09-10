@@ -20,6 +20,7 @@ A top-level package to coordinate a robot with a soft pneumatic hand.
 	- [matplotlib](https://matplotlib.org/) (`pip install matplotlib`)
 	- [pynput](https://pypi.org/project/pynput/) (`pip install pynput`)
 	- [yaml](https://pyyaml.org/wiki/PyYAMLDocumentation) (`pip install pyyaml`)
+	- [pickle](https://docs.python.org/3/library/pickle.html) (`pip install pickle`)
 	
 ## How to Install
 1. Add this package to your `workspace/src` folder.
