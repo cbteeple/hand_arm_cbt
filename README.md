@@ -100,11 +100,11 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 	- This command uses MoveIt! to plan a trajectory based on poses, then saves the resulting joint space trajectory.
 
 - Run a planned routine
-	- `roslaunch hand_arm pick-place-run.launch traj_profile:=[FILENAME] num_reps:=[# REPS]`
+	- `roslaunch hand_arm pick-place-run.launch traj_profile:=[FILENAME] reps:=[# REPS]`
 
 
 - Run a live routine (this replans, but doesn't save)
-	- `roslaunch hand_arm pick-place-run.launch traj_profile:=[FILENAME] num_reps:=[# REPS] replan:=true`
+	- `roslaunch hand_arm pick-place-run.launch traj_profile:=[FILENAME] reps:=[# REPS] replan:=true`
 
 
 #### Joint Space:
@@ -118,7 +118,7 @@ You can set up pick-and-place routine using joint configurations directly.
 
 
 - Do pick and place
-	- `roslaunch hand_arm pick-place-run.launch traj_profile:=pick_front speed_factor:=1.0 num_reps:=20`
+	- `roslaunch hand_arm pick-place-run.launch traj_profile:=pick_front speed_factor:=1.0 reps:=20`
 
 
 
