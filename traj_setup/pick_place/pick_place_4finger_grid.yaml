@@ -1,7 +1,7 @@
 
 settings:
   boomerang: true
-  type: single # options: single, grid
+  type: grid # options: single, grid
 
 arm:
   initial_pose:
@@ -21,6 +21,17 @@ arm:
     orientation: [ 0.707, 0.0, 0.0,  0.707]
 
   pickup_height: 0.2 #[meters]
+
+  grid:
+    # Number of points on each side [number] in (x, y, z) order
+    num_pts: [11,   11,  1]
+
+    # Dimension of each grid side [meters] in (x, y, z) order
+    dims: [0.1, 0.1,  0]
+
+    # Basis shifting (maybe you don't want the ref frame to be the robot's home frame)
+    # Use quaternions?
+    basis: []
 
 
 

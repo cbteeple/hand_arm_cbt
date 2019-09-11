@@ -49,18 +49,68 @@ class pickPlaceBuild:
             f.close()
 
         self.boomerang = self.config['settings']['boomerang']
+        self.pattern_type = self.config['settings']['type']
 
-        self.trajectory_built = {}
+        self.traj_patterned = []
+
+
+
+    def create_traj_pattern(self):
+
+        # Make a grid if that's what the file says to do
+        if self.pattern_type == 'grid':
+            grid_settings = self.config['arm']['grid']
+
+            num_pts = grid_settings['num_pts']
+            dims = grid_settings['dims']
+
+            x = np.linspace(-dims[0]/2, dims[0]/2, num_pts[0])
+            y = np.linspace(-dims[1]/2, dims[1]/2, num_pts[1])
+            z = np.linspace(-dims[2]/2, dims[2]/2, num_pts[2])
+
+            x1,x2,x3 = np.meshgrid(x,y,z)
+
+            x1 = x1.flatten()
+            x2 = x2.flatten()
+            x3 = x3.flatten()
+
+            self.perturbations = np.vstack((x1,x2,x3)).transpose().tolist()
+
+        else:
+            self.perturbations = [0,0,0]
+
+
+
+
 
 
     def build_traj(self):
+        self.create_traj_pattern()
+
+
+        self.trajectory_built = {}
         self.build_sequence()
         self.build_grasp()
-        self.build_moves()
+        base_config = copy.deepcopy(self.config)
 
-        out_file =   os.path.join(filepath_out,self.traj_profile+'.yaml')
+        perturb_num = 0
 
-        self.save_traj(out_file)
+        for entry in self.perturbations:
+            
+            # Update with current perturbation
+            curr_config = copy.deepcopy(base_config)
+
+            for idx, axis in enumerate(curr_config['arm']['grasp_pose']['position']):
+                curr_config['arm']['grasp_pose']['position'][idx] = axis + entry[idx]
+
+            self.build_moves(curr_config)
+
+            out_file =   os.path.join(filepath_out,self.traj_profile,"pos_"+"%04d"%(perturb_num)+'.yaml')
+
+            self.save_traj(out_file)
+
+            perturb_num+=1
+
 
         
 
@@ -139,30 +189,30 @@ class pickPlaceBuild:
 
 
 
-    def build_moves(self):
+    def build_moves(self, config):
 
         arm_moves = {}
 
-        pickup_height = self.config['arm']['pickup_height']
+        pickup_height = config['arm']['pickup_height']
 
-        above_grasp = copy.deepcopy(self.config['arm']['grasp_pose'])
+        above_grasp = copy.deepcopy(config['arm']['grasp_pose'])
         above_grasp['position'][2] = above_grasp['position'][2] + pickup_height
 
-        above_release = copy.deepcopy(self.config['arm']['release_pose'])
+        above_release = copy.deepcopy(config['arm']['release_pose'])
         above_release['position'][2] = above_release['position'][2] + pickup_height
 
 
 
-        arm_moves['pre'] = [copy.deepcopy(self.config['arm']['initial_pose']),
-                            copy.deepcopy(self.config['arm']['grasp_pose'])   ]
+        arm_moves['pre'] = [copy.deepcopy(config['arm']['initial_pose']),
+                            copy.deepcopy(config['arm']['grasp_pose'])   ]
 
-        arm_moves['move'] = [copy.deepcopy(self.config['arm']['grasp_pose']),
+        arm_moves['move'] = [copy.deepcopy(config['arm']['grasp_pose']),
                             above_grasp,
                             above_release,
-                            copy.deepcopy(self.config['arm']['release_pose']) ]
+                            copy.deepcopy(config['arm']['release_pose']) ]
 
-        arm_moves['post'] = [copy.deepcopy(self.config['arm']['release_pose']),
-                            copy.deepcopy(self.config['arm']['final_pose'])   ]
+        arm_moves['post'] = [copy.deepcopy(config['arm']['release_pose']),
+                            copy.deepcopy(config['arm']['final_pose'])   ]
 
         self.trajectory_built['arm'] = arm_moves
 
