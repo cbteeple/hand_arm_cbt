@@ -24,7 +24,7 @@ arm:
 
   grid:
     # Number of points on each side [number] in (x, y, z) order
-    num_pts: [11,   11,  1]
+    num_pts: [3,   3,  1]
 
     # Dimension of each grid side [meters] in (x, y, z) order
     dims: [0.1, 0.1,  0]

@@ -56,9 +56,11 @@ class pickPlacePlan:
 
         # Read the trajectory configuration file
         self.filepath = os.path.join(filepath_traj)
-        config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml') 
+        self.filepath =   os.path.join(self.filepath,self.traj_profile)
 
-        with open(config_file,'r') as f:
+        self.in_files = [f for f in os.listdir(self.filepath) if (os.path.isfile(os.path.join(self.filepath, f)) and f.endswith(".yaml"))]
+
+        with open(os.path.join(self.filepath,self.in_files[0]),'r') as f:
             # use safe_load instead of load
             self.traj_config = yaml.safe_load(f)
 
@@ -79,6 +81,21 @@ class pickPlacePlan:
             raise
 
 
+    def plan_all(self):
+        for config_file in self.in_files:
+            with open(os.path.join(self.filepath,config_file),'r') as f:
+                # use safe_load instead of load
+                self.traj_config = yaml.safe_load(f)
+
+                self.sequence = self.traj_config['sequence']
+                self.setup = self.sequence['setup']
+                self.arm_segs = self.traj_config['arm']
+                f.close()
+
+            self.plan_segments()
+            self.save_plan(os.path.join(self.filepath,config_file))
+
+
     def plan_segments(self):
         # build the trajectories
         self.planned_segments = {}
@@ -88,11 +105,11 @@ class pickPlacePlan:
    
 
 
-    def save_plan(self):
+    def save_plan(self, in_file_name):
         self.traj_config['arm'] = self.planned_segments
         self.traj_config['sequence']['setup']['arm_traj_space'] = 'joint-planned'
 
-        out_file =   os.path.join(filepath_out,self.traj_profile+'_planned.traj')
+        out_file =  in_file_name.replace('.yaml',"_planned.traj")
 
         if not os.path.exists(os.path.dirname(out_file)):
             try:
@@ -115,8 +132,7 @@ def main(file_name=None):
         rospy.init_node("pick_place_plan", anonymous=True, disable_signals=True)
 
         node = pickPlacePlan()
-        node.plan_segments()
-        node.save_plan()
+        node.plan_all()
 
         
 

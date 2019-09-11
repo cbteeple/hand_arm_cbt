@@ -59,12 +59,13 @@ class pickPlace:
 
         # Read the trajectory configuration file
         self.filepath = os.path.join(filepath_traj)
+        self.filepath =   os.path.join(self.filepath,self.traj_profile)
 
-        config_file =   os.path.join(self.filepath,self.traj_profile+'_planned.traj')
-        if (not os.path.exists(config_file)) or self.replan:
-            self.replan = True
-            config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml')
-            print('Planning trajectory from scratch')
+        self.in_files = [f for f in os.listdir(self.filepath) if (os.path.isfile(os.path.join(self.filepath, f)) and f.endswith(".traj"))]
+
+        self.in_files.sort()
+
+        config_file =   os.path.join(self.filepath,self.in_files[0])
 
         with open(config_file,'r') as f:
 
@@ -98,6 +99,36 @@ class pickPlace:
         else:
             print('Nonstandard hand trajectory space')
             raise
+
+
+    def run_multiple(self):
+
+        try:
+
+            for file in self.in_files:
+                print(file)
+                config_file =   os.path.join(self.filepath,file)
+
+                with open(config_file,'r') as f:
+                    self.traj_config = pickle.load(f)
+                    self.operations = self.traj_config['sequence']
+                    f.close()
+
+                    self.get_sequence()
+
+                    # Go to the start
+                    #inp = raw_input("Move to Starting Position? (Press ENTER)")
+                    self.go_to_start()
+                    self.plan_sequence()
+
+                    # Excecute the trajectory the desired number of times
+                    self.rep_sequence(wait_before_each = False)
+                
+
+        except KeyboardInterrupt:
+            rospy.signal_shutdown("KeyboardInterrupt")
+            raise
+
 
 
     def get_sequence(self):
@@ -174,10 +205,11 @@ class pickPlace:
 
             
         
-    def rep_sequence(self):
+    def rep_sequence(self, wait_before_each = True):
         try:
             for idx in range(self.num_reps):
-                inp = raw_input("Execute Action? (Press ENTER)")
+                if wait_before_each:
+                    inp = raw_input("Execute Action? (Press ENTER)")
                 self.excecute_sequence()
                 self.go_to_start()
 
@@ -193,15 +225,7 @@ def main(file_name=None):
         rospy.init_node("pick_and_place", anonymous=True, disable_signals=True)
 
         node = pickPlace()
-        node.get_sequence()
-
-        # Go to the start
-        inp = raw_input("Move to Starting Position? (Press ENTER)")
-        node.go_to_start()
-        node.plan_sequence()
-
-        # Excecute the trajectory the desired number of times
-        node.rep_sequence()
+        node.run_multiple()
         
 
     except KeyboardInterrupt:

@@ -93,18 +93,21 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 - Build a routine
 	- Create a yaml file similar to the ones in "traj_setup"
 	- Set the poses and grasping settings you want to use.
-	- `roslaunch hand_arm pick-place-build.launch file:=[FILENAME]` This command automatically builds a trajectory usig the format described above.
+	- `roslaunch hand_arm pick-place-build.launch traj:=[FILENAME]` This command automatically builds a trajectory usig the format described above.
+	- `roslaunch hand_arm pick-place-build-multi.launch traj:=[FILENAME]` Build a family of trajectories
 
 - Plan a routine
-	- `roslaunch hand_arm pick-place-plan.launch traj_profile:=[FILENAME]`
+	- `roslaunch hand_arm pick-place-plan.launch traj:=[FILENAME]`
+	- `roslaunch hand_arm pick-place-plan-multi.launch traj:=[FILENAME]` Build a family of trajectories
 	- This command uses MoveIt! to plan a trajectory based on poses, then saves the resulting joint space trajectory.
 
 - Run a planned routine
-	- `roslaunch hand_arm pick-place-run.launch traj_profile:=[FILENAME] reps:=[# REPS]`
+	- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS]`
+	- `roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME] reps:=[# REPS]`
 
 
 - Run a live routine (this replans, but doesn't save)
-	- `roslaunch hand_arm pick-place-run.launch traj_profile:=[FILENAME] reps:=[# REPS] replan:=true`
+	- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS] replan:=true`
 
 
 #### Joint Space:
@@ -118,7 +121,7 @@ You can set up pick-and-place routine using joint configurations directly.
 
 
 - Do pick and place
-	- `roslaunch hand_arm pick-place-run.launch traj_profile:=pick_front speed_factor:=1.0 reps:=20`
+	- `roslaunch hand_arm pick-place-run.launch traj:=pick_front speed_factor:=1.0 reps:=20`
 
 
 
