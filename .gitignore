@@ -7,4 +7,6 @@ install_manifest.txt
 *.pyc
 *.traj
 
+trajectories
+
 
