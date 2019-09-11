@@ -106,7 +106,7 @@ class pickPlace:
         try:
 
             for file in self.in_files:
-                print(file)
+                print('\n'+file)
                 config_file =   os.path.join(self.filepath,file)
 
                 with open(config_file,'r') as f:
@@ -208,6 +208,7 @@ class pickPlace:
     def rep_sequence(self, wait_before_each = True):
         try:
             for idx in range(self.num_reps):
+                print('REP: %d'%(idx))
                 if wait_before_each:
                     inp = raw_input("Execute Action? (Press ENTER)")
                 self.excecute_sequence()
