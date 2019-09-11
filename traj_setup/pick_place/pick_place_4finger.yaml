@@ -1,0 +1,36 @@
+
+settings:
+  boomerang: true
+
+arm:
+  initial_pose:
+    position: [-0.2, 0.55, 0.4]
+    orientation: [0.5, 0.5, -0.5, 0.5]
+
+  grasp_pose:
+    position: [-0.18, 0.55, 0.205]
+    orientation: [0.5, 0.5, -0.5, 0.5]
+
+  release_pose:
+    position: [0.2, 0.55, 0.22]
+    orientation: [0.5, 0.5, -0.5, 0.5]
+
+  final_pose:
+    position: [0.2, 0.55, 0.4]
+    orientation: [ 0.707, 0.0, 0.0,  0.707]
+
+  pickup_height: 0.2 #[meters]
+
+
+
+hand:
+  num_channels: 4
+
+  idle_pressure:  [0,0,0,0,0,0,0]  #[psi]
+  grasp_pressure: [15,15,15,15,0,0,0] #[psi]
+
+  grasp_time: 2.0    #[sec]
+  wait_after_grasp: 1.0    #[sec]
+
+  release_time: 2.0  #[sec]
+  wait_after_release: 1.0    #[sec]

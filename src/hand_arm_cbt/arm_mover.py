@@ -123,7 +123,11 @@ class trajSender:
         
         curr_pt = JointTrajectoryPoint(positions=joint_states.position, velocities=[0]*6, time_from_start=rospy.Duration(0.0))
         goal_tmp.trajectory.points.append(curr_pt)
-        curr_pt = JointTrajectoryPoint(positions=goal[0]['joints_pos'], velocities=[0]*6, time_from_start=rospy.Duration(reset_time))
+
+        curr_pt =JointTrajectoryPoint( positions=goal.trajectory.points[0].positions,
+                                        velocities=[0]*6,
+                                        time_from_start=rospy.Duration(reset_time) )
+
         goal_tmp.trajectory.points.append(curr_pt)
 
         self.execute_traj( goal_tmp, blocking)

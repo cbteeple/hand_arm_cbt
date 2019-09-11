@@ -79,7 +79,6 @@ class pickPlacePlan:
             raise
 
 
-
     def plan_segments(self):
         # build the trajectories
         self.planned_segments = {}

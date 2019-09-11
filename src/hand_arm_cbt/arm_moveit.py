@@ -283,7 +283,6 @@ class MoveItPythonInteface(object):
         self.move_group.set_pose_target(pose_goal)
         plan = self.move_group.plan()
 
-        print(plan)
         return plan
 
 
@@ -330,7 +329,7 @@ class MoveItPythonInteface(object):
         # ignoring the check for infeasible jumps in joint space, which is sufficient
         # for this tutorial.
 
-
+        '''
         if from_last:
             if self.last_state:
                 self.move_group.set_start_state(self.last_state)
@@ -338,6 +337,14 @@ class MoveItPythonInteface(object):
                 self.move_group.set_start_state_to_current_state()
         else:
             self.move_group.set_start_state_to_current_state()
+        '''
+        self.move_group.set_joint_value_target(waypoints[0])
+        plan = self.move_group.plan()
+
+        start_pos = self.robot.get_current_state()
+        start_pos.joint_state.position=plan.joint_trajectory.points[-1].positions
+        start_pos.joint_state.velocity=[0]*6
+        self.move_group.set_start_state(start_pos)
         
         (plan, fraction) = self.move_group.compute_cartesian_path(
                                                                              waypoints,   # waypoints to follow

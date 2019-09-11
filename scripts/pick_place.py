@@ -24,6 +24,7 @@ from sensor_msgs.msg import JointState
 from pressure_controller_ros.msg import *
 from math import pi
 import yaml
+import pickle
 import os
 import sys
 import matplotlib.pyplot as plt
@@ -60,7 +61,7 @@ class pickPlace:
         self.filepath = os.path.join(filepath_traj)
 
         config_file =   os.path.join(self.filepath,self.traj_profile+'_planned.traj')
-        if (not exist(config_file)) or self.replan:
+        if (not os.path.exists(config_file)) or self.replan:
             self.replan = True
             config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml')
             print('Planning trajectory from scratch')
@@ -127,10 +128,10 @@ class pickPlace:
 
 
     def plan_sequence(self):
-        if self.replan:
-            # build the trajectories
-            self.operation_plans = []
-            
+
+        self.operation_plans = []
+
+        if self.replan:            
             for movement in self.operation_sequence:
                 out = {}
                 out['arm']  = None
@@ -141,6 +142,20 @@ class pickPlace:
                     out['hand'] = self.hand_sender.build_traj(movement['hand'])
 
                 self.operation_plans.append(out)
+
+        else:
+            for movement in self.operation_sequence:
+                out = {}
+                out['arm']  = None
+                out['hand'] = None
+                if movement['arm'] is not None:
+                    out['arm'] = movement['arm']
+                if movement['hand'] is not None:
+                    out['hand'] = self.hand_sender.build_traj(movement['hand'])
+
+                self.operation_plans.append(out)
+
+
 
 
     def excecute_sequence(self):
