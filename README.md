@@ -21,12 +21,30 @@ A top-level package to coordinate a robot with a soft pneumatic hand.
 	- [pynput](https://pypi.org/project/pynput/) (`pip install pynput`)
 	- [yaml](https://pyyaml.org/wiki/PyYAMLDocumentation) (`pip install pyyaml`)
 	
-## How to Install
+## Installation
 1. Add this package to your `workspace/src` folder.
 2. Run `catkin_make` to enable the custom python modules in this package to work
 
 
-## How To Use
+## Usage
+**Unless specified, all commands assume you want to run a command using BOTH the arm and a hand. If you want to run on only one device, see the _"Run trajectories on only one device"_ section below.**
+
+### Prerequisits
+Before you can control the robot and hand, you first need to start some ROS servers:
+- Start the robot control server
+	- `roslaunch ur_modern_driver ur5e_bringup.launch limited:=true robot_ip:=192.168.1.2`
+- Start the hand control server (based on [pressure_control_ros](https://github.com/cbteeple/pressure_control_cbt) package)
+	- `roslaunch hand_arm hand_bringup.launch profile:=anthro7`
+- Start MoveIt! (If you're building trajectories in cartesian space)
+	- With the real robot
+		- `roslaunch ur5_e_moveit_config ur5_e_moveit_planning_execution.launch limited:=false`
+		- `roslaunch ur5_e_moveit_config moveit_rviz.launch config:=true `
+	- With a simulated robot
+		- `roslaunch ur_e_gazebo ur5e.launch`
+		- `roslaunch ur5_e_moveit_config ur5_e_moveit_planning_execution.launch sim:=true`
+		- `roslaunch ur5_e_moveit_config moveit_rviz.launch config:=true`
+
+
 ### Move to specified joint positions:
 Move to zero:
 `rosrun hand_arm move_home.py go 0`
@@ -58,7 +76,7 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 	- `rosrun hand_arm replay.py [FILENAME]`
 
 
-### Build motion routines manually:
+### Set up motion routines:
 
 1. Create a yaml file similar to the ones in "trajectories"
 
@@ -88,7 +106,9 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 ### Do pick-and-place actions:
 
 #### Cartesian Space
-You can set up pick-and-place routine using cartesian poses, then use MoveIt! to do the IK and motion planning. 
+You can set up pick-and-place routine using cartesian poses, then use MoveIt! to do the IK and motion planning.
+
+_This requires that you bring up the robot and start MoveIt! (See above)_
 
 - Build a routine
 	- Create a yaml file similar to the ones in "traj_setup"
@@ -124,4 +144,16 @@ You can set up pick-and-place routine using joint configurations directly.
 	- `roslaunch hand_arm pick-place-run.launch traj:=pick_front speed_factor:=1.0 reps:=20`
 
 
+### Run trajectories on only one device
+#### Any Trajectory
+- Arm Only
+	- `roslaunch hand_arm arm-traj.launch traj:=[FILENAME] reps:=[# REPS]`
+- Hand Only
+	- `roslaunch pressure_controller_ros load_traj.launch profile:=example/planar2seg_demo`
+	- `roslaunch pressure_controller_ros run_traj.launch`
 
+#### Pick-and-place actions
+- Arm Only
+	- `roslaunch hand_arm pick-place-run.launch hand:=false traj:=[FILENAME] reps:=[# REPS]`
+- Hand Only
+	- `roslaunch hand_arm pick-place-run.launch arm:=false traj:=[FILENAME] reps:=[# REPS]`
