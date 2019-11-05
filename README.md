@@ -27,6 +27,7 @@ A top-level package to coordinate a robot with a soft pneumatic hand.
 
 
 ## Usage
+**Unless specified, all commands assume you want to run a command using BOTH the arm and a hand. If you want to run on only one device, see the _"Run trajectories on only one device"_ section below.**
 
 ### Prerequisits
 Before you can control the robot and hand, you first need to start some ROS servers:
@@ -143,4 +144,16 @@ You can set up pick-and-place routine using joint configurations directly.
 	- `roslaunch hand_arm pick-place-run.launch traj:=pick_front speed_factor:=1.0 reps:=20`
 
 
+### Run trajectories on only one device
+#### Any Trajectory
+- Arm Only
+	- `roslaunch hand_arm arm-traj.launch traj:=[FILENAME] reps:=[# REPS]`
+- Hand Only
+	- `roslaunch pressure_controller_ros load_traj.launch profile:=example/planar2seg_demo`
+	- `roslaunch pressure_controller_ros run_traj.launch`
 
+#### Pick-and-place actions
+- Arm Only
+	- `roslaunch hand_arm pick-place-run.launch hand:=false traj:=[FILENAME] reps:=[# REPS]`
+- Hand Only
+	- `roslaunch hand_arm pick-place-run.launch arm:=false traj:=[FILENAME] reps:=[# REPS]`
