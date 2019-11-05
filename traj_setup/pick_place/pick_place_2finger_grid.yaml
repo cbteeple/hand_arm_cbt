@@ -18,16 +18,16 @@ arm:
 
   final_pose:
     position: [0.2, 0.55, 0.4]
-    orientation: [ 0.707, 0.0, 0.0,  0.707]
+    orientation: [0.5, 0.5, -0.5, 0.5]
 
   pickup_height: 0.2 #[meters]
 
   grid:
     # Number of points on each side [number] in (x, y, z) order
-    num_pts: [3,   3,  1]
+    num_pts: [11,   1,  1]
 
     # Dimension of each grid side [meters] in (x, y, z) order
-    dims: [0.1, 0.1,  0]
+    dims: [0.1, 0,  0]
 
     # Basis shifting (maybe you don't want the ref frame to be the robot's home frame)
     # Use quaternions?
@@ -41,8 +41,8 @@ hand:
   idle_pressure:  [0,0,0,0,0,0,0]  #[psi]
   grasp_pressure: [13,13,13,13,0,0,0] #[psi]
 
-  grasp_time: 2.0    #[sec]
+  grasp_time: 1.0    #[sec]
   wait_after_grasp: 1.0    #[sec]
 
-  release_time: 2.0  #[sec]
+  release_time: 1.0  #[sec]
   wait_after_release: 1.0    #[sec]

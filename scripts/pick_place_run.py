@@ -55,6 +55,9 @@ class pickPlace:
         self.num_reps = rospy.get_param(rospy.get_name()+'/num_reps',1)
         self.replan = rospy.get_param(rospy.get_name()+'/replan',False)
 
+        self.use_arm = rospy.get_param(rospy.get_name()+'/use_arm',True)
+        self.use_hand = rospy.get_param(rospy.get_name()+'/use_hand',True)
+
         
 
         # Read the trajectory configuration file
@@ -77,27 +80,34 @@ class pickPlace:
             f.close()
 
 
-        # Create the arm objects
         setup = self.operations['setup']
-        if (setup['arm_traj_space']== 'joint') or (setup['arm_traj_space']== 'joint-planned'):
-            self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
+        
+        # Create the arm objects
+        if self.use_arm:
+            if (setup['arm_traj_space']== 'joint') or (setup['arm_traj_space']== 'joint-planned'):
+                self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
 
-        elif setup['arm_traj_space'] == 'cartesian':
-            self.arm_sender = ur_traj_sender_moveit(JOINT_NAMES)
+            elif setup['arm_traj_space'] == 'cartesian':
+                self.arm_sender = ur_traj_sender_moveit(JOINT_NAMES)
 
-            #configure the planners based on the config file
-            self.arm_sender.config_planner(os.path.join(filepath_config,'moveit_config.yaml'))
+                #configure the planners based on the config file
+                self.arm_sender.config_planner(os.path.join(filepath_config,'moveit_config.yaml'))
+            else:
+                print('Nonstandard arm trajectory space')
+                self.arm_sender = None
+                raise
         else:
-            print('Nonstandard arm trajectory space')
-            self.arm_sender = None
-            raise
+            print('Not using arm - Arm moves will be skipped')
 
         # Create the pneumatic hand object
-        if setup['hand_traj_space'] == 'pressure':
-            self.hand_sender = pneu_traj_sender(self.speed_factor)
+        if self.use_hand:
+            if setup['hand_traj_space'] == 'pressure':
+                self.hand_sender = pneu_traj_sender(self.speed_factor)
+            else:
+                print('Nonstandard hand trajectory space')
+                raise
         else:
-            print('Nonstandard hand trajectory space')
-            raise
+            print('Not using hand - Hand moves will be skipped')
 
 
     def get_sequence(self):
@@ -119,11 +129,20 @@ class pickPlace:
 
 
     def go_to_start(self):
-        self.hand_sender.go_to_start(self.operation_sequence[0]['hand'], reset_time, blocking=False)
-        self.arm_sender.go_to_start(self.operation_sequence[0]['arm'], reset_time, blocking=False)
+        try:
+            # Start the trajectories
+            if self.use_hand:
+                self.hand_sender.go_to_start(self.operation_sequence[0]['hand'], reset_time, blocking=False)
+            if self.use_arm:
+                self.arm_sender.go_to_start(self.operation_sequence[0]['arm'], reset_time, blocking=False)
 
-        self.hand_sender.traj_client.wait_for_result()
-        self.arm_sender.traj_client.wait_for_result()
+            # Wait for the traj to finish
+            if self.use_hand:
+                self.hand_sender.traj_client.wait_for_result()
+            if self.use_arm:
+                self.arm_sender.traj_client.wait_for_result()
+        except KeyboardInterrupt:
+            raise
 
 
 
@@ -137,9 +156,16 @@ class pickPlace:
                 out['arm']  = None
                 out['hand'] = None
                 if movement['arm'] is not None:
-                    out['arm'] = self.arm_sender.build_traj(movement['arm'])
+                    if self.use_arm:
+                        out['arm'] = self.arm_sender.build_traj(movement['arm'])
+                    else:
+                        out['arm'] = None
+
                 if movement['hand'] is not None:
-                    out['hand'] = self.hand_sender.build_traj(movement['hand'])
+                    if self.use_hand:
+                        out['hand'] = self.hand_sender.build_traj(movement['hand'])
+                    else:
+                        out['hand'] = None
 
                 self.operation_plans.append(out)
 
@@ -149,9 +175,15 @@ class pickPlace:
                 out['arm']  = None
                 out['hand'] = None
                 if movement['arm'] is not None:
-                    out['arm'] = movement['arm']
+                    if self.use_arm:
+                        out['arm'] = movement['arm']
+                    else:
+                        out['arm'] = None
                 if movement['hand'] is not None:
-                    out['hand'] = self.hand_sender.build_traj(movement['hand'])
+                    if self.use_hand:
+                        out['hand'] = self.hand_sender.build_traj(movement['hand'])
+                    else:
+                        out['hand'] = None
 
                 self.operation_plans.append(out)
 
@@ -159,18 +191,24 @@ class pickPlace:
 
 
     def excecute_sequence(self):
-        for plan in self.operation_plans:
-            if plan['hand'] is not None:
-                self.hand_sender.execute_traj(plan['hand'], blocking=False)
+        try:
+            for plan in self.operation_plans:
+                if (plan['hand'] is not None) and (self.use_hand):
+                    self.hand_sender.execute_traj(plan['hand'], blocking=False)
 
-            if plan['arm'] is not None:
-                if not Fake:
-                    self.arm_sender.execute_traj(plan['arm'], blocking=False)
-                else:
-                    self.arm_sender.display_trajectory(plan['arm'])
+                if (plan['arm'] is not None) and (self.use_arm):
+                    if not Fake:
+                        self.arm_sender.execute_traj(plan['arm'], blocking=False)
+                    else:
+                        self.arm_sender.display_trajectory(plan['arm'])
 
-            self.hand_sender.traj_client.wait_for_result()
-            self.arm_sender.traj_client.wait_for_result()
+                if self.use_hand:
+                    self.hand_sender.traj_client.wait_for_result()
+                if self.use_arm:
+                    self.arm_sender.traj_client.wait_for_result()
+
+         except KeyboardInterrupt:
+            raise
 
             
         
@@ -182,7 +220,8 @@ class pickPlace:
                 self.go_to_start()
 
         except KeyboardInterrupt:
-            self.hand_sender.shutdown()
+            if self.use_hand:
+                self.hand_sender.shutdown()
             raise
 
    

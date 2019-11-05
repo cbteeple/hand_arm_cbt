@@ -8,6 +8,10 @@
 <arg name="speed_factor" default="1.0" doc="the speed to run the trajectory at" />
 <arg name="reps" default="1" doc="The number of reps" />
 <arg name="replan" default="false" doc="The number of reps" />
+<arg name="start" default="0" doc="The number of reps" />
+
+<arg name="arm" default="true" doc="The number of reps" />
+<arg name="hand" default="true" doc="The number of reps" />
 
 
 <!-- Load controller settings -->
@@ -18,6 +22,9 @@
       	<param name="speed_factor" type="double" value="$(arg speed_factor)" />
       	<param name="num_reps" type="int" value="$(arg reps)" />
       	<param name="replan" type="bool" value="$(arg replan)" />
+      	<param name="start" type="int" value="$(arg start)" />
+      	<param name="use_arm" type="bool" value="$(arg arm)" />
+      	<param name="use_hand" type="bool" value="$(arg hand)" />
     </node>
 
 

@@ -163,11 +163,15 @@ class trajSender:
                 pass
 
         except KeyboardInterrupt:
-            self.traj_client.cancel_goal()
-            self.safe_stop()
+            self.shutdown()
             raise
         except:
             raise
+
+
+    def shutdown(self):
+        self.traj_client.cancel_goal()
+        self.safe_stop()
 
 
    

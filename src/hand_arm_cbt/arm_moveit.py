@@ -321,7 +321,6 @@ class MoveItPythonInteface(object):
 
 
 
-
     def plan_cartesian_path(self, waypoints, from_last = False):     
         # We want the Cartesian path to be interpolated at a resolution of 1 cm
         # which is why we will specify 0.01 as the eef_step in Cartesian
@@ -453,13 +452,35 @@ class MoveItPythonInteface(object):
                 pass
 
         except KeyboardInterrupt:
-            self.traj_client.cancel_goal()
-            self.safe_stop()
+            self.shutdown()
             raise
         except:
             raise
 
 
+
+
+    def safe_stop(self):
+        joint_states = rospy.wait_for_message("joint_states", JointState)
+
+        goal_stop = copy.deepcopy(self.goal_blank)
+
+        goal_stop.trajectory.points= []
+
+        curr_pt = JointTrajectoryPoint(positions=joint_states.position, velocities=[0]*6, time_from_start=rospy.Duration(0.0))
+        goal_stop.trajectory.points.append(curr_pt)
+        curr_pt = JointTrajectoryPoint(positions=joint_states.position, velocities=[0]*6, time_from_start=rospy.Duration(1.0))
+        goal_stop.trajectory.points.append(curr_pt)
+
+        self.traj_client.send_goal(goal_stop)
+
+
+
+    def shutdown(self):
+        self.traj_client.cancel_goal()
+        self.safe_stop()
+
+        
 
     def wait_for_state_update(self, box_name=None, box_is_attached=False, timeout=4):
         # Copy class variables to local variables to make the web tutorials more clear.

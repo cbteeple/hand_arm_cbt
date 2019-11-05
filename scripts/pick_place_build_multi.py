@@ -18,11 +18,13 @@ import rospy
 from math import pi
 import yaml
 import os
+import shutil
 import errno
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
+
 
 
 
@@ -41,7 +43,8 @@ class pickPlaceBuild:
 
         # Read the trajectory configuration file
         self.filepath = os.path.join(filepath_traj)
-        config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml') 
+        self.filepath_out_dir = os.path.join(filepath_out,self.traj_profile)
+        config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml')
 
         with open(config_file,'r') as f:
             # use safe_load instead of load
@@ -87,13 +90,14 @@ class pickPlaceBuild:
     def build_traj(self):
         self.create_traj_pattern()
 
-
         self.trajectory_built = {}
         self.build_sequence()
         self.build_grasp()
         base_config = copy.deepcopy(self.config)
 
         perturb_num = 0
+
+        self.prep_directory(self.filepath_out_dir)
 
         for entry in self.perturbations:
             
@@ -103,28 +107,36 @@ class pickPlaceBuild:
             for idx, axis in enumerate(curr_config['arm']['grasp_pose']['position']):
                 curr_config['arm']['grasp_pose']['position'][idx] = axis + entry[idx]
 
+            for idx, axis in enumerate(curr_config['arm']['release_pose']['position']):
+                curr_config['arm']['release_pose']['position'][idx] = axis + entry[idx]
+
             self.build_moves(curr_config)
 
-            out_file =   os.path.join(filepath_out,self.traj_profile,"pos_"+"%04d"%(perturb_num)+'.yaml')
+            out_file =   os.path.join(self.filepath_out_dir,"pos_"+"%04d"%(perturb_num)+'.yaml')
 
             self.save_traj(out_file)
 
             perturb_num+=1
 
 
-        
-
-
-
-    def save_traj(self, out_file):
-        if not os.path.exists(os.path.dirname(out_file)):
+    def prep_directory(self, out_dir):
+        if not os.path.exists(out_dir):
             try:
-                os.makedirs(os.path.dirname(out_file))
+                os.makedirs(out_dir)
             except OSError as exc: # Guard against race condition
                 if exc.errno != errno.EEXIST:
                     raise
 
-      
+        else:
+            #Remove all existing files
+            filelist = [ f for f in os.listdir(out_dir)]
+            for f in filelist:
+                os.remove(os.path.join(out_dir, f))
+
+
+
+    def save_traj(self, out_file):
+
         with open(out_file, 'w+') as f:
             yaml.dump(self.trajectory_built, f, default_flow_style=None)
 
