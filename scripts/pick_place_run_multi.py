@@ -137,7 +137,7 @@ class pickPlace:
 
         try:
             service = rospy.ServiceProxy('rosbag_recorder/record_topics', rbr.RecordTopics)
-            response = service(self.out_filename, ['/pressure_control/pressure_data'])
+            response = service(self.out_filename, topic_list)
             return response.success
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
