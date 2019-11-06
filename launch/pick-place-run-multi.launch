@@ -34,6 +34,8 @@
     	  type="rosbag_recorder_server.py" respawn="false"
     	  output="screen"
     	  if="$(eval save)">
+    	<remap from="record_topics" to="rosbag_recorder/record_topics" />
+		<remap from="stop_recording" to="rosbag_recorder/stop_recording" />
     </node>
 
 
