@@ -32,6 +32,7 @@ import matplotlib.pyplot as plt
 from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
 from hand_arm_cbt.arm_mover import trajSender as ur_traj_sender
 from hand_arm_cbt.arm_moveit import MoveItPythonInteface as ur_traj_sender_moveit
+import rosbag_recorder.srv as rbr
 
 
 reset_time = 2.0
@@ -42,6 +43,9 @@ JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
 curr_path=os.path.dirname(os.path.abspath(__file__))
 filepath_traj = os.path.join(curr_path,'..','trajectories')
 filepath_config = os.path.join(curr_path,'..','config')
+
+save_data_folder = 'Documents/data'
+
 
 Fake = False
 
@@ -58,12 +62,14 @@ class pickPlace:
 
         self.use_arm = rospy.get_param(rospy.get_name()+'/use_arm',True)
         self.use_hand = rospy.get_param(rospy.get_name()+'/use_hand',True)
+        self.save_data = rospy.get_param(rospy.get_name()+'/save_data',False)
 
         
 
         # Read the trajectory configuration file
         self.filepath = os.path.join(filepath_traj)
         self.filepath =   os.path.join(self.filepath,self.traj_profile)
+        self.save_data_folder = save_data_folder
 
         self.in_files = [f for f in os.listdir(self.filepath) if (os.path.isfile(os.path.join(self.filepath, f)) and f.endswith(".traj"))]
 
@@ -111,6 +117,60 @@ class pickPlace:
                 raise
         else:
             print('Not using hand - Hand moves will be skipped')
+
+
+        if self.save_data:
+            self.out_filename=self.createOutFile(self.traj_profile + '.bag')
+            self.start_saving()
+
+    
+
+    def start_saving(self):
+        rospy.wait_for_service('rosbag_recorder/record_topics')
+
+        # generate the topic list
+        topic_list = []
+        if self.use_arm:
+            topic_list.extend(['/joint_states','/wrench','/tool_velocity'])
+        if self.use_hand:
+            topic_list.extend(['/pressure_control/echo','/pressure_control/pressure_data'])
+
+        try:
+            service = rospy.ServiceProxy('rosbag_recorder/record_topics', rbr.RecordTopics)
+            response = service(self.out_filename, ['/pressure_control/pressure_data'])
+            return response.success
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+
+
+    def stop_saving(self):
+        try:
+            service = rospy.ServiceProxy('rosbag_recorder/stop_recording', rbr.StopRecording)
+            response = service(self.out_filename)
+            return response.success
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+
+
+    def createOutFile(self,filename):
+        outFile=os.path.abspath(os.path.join(os.path.expanduser('~'),self.save_data_folder,filename))
+        print(outFile)
+
+        dirname = os.path.dirname(outFile)
+        print(dirname)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        i = 0
+        while os.path.exists("%s_%04d.txt" % (outFile,i) ):
+            i += 1
+
+        return "%s_%04d.txt" % (outFile,i)
+
+
+
+
+
 
     def run_multiple(self):
 
@@ -238,10 +298,8 @@ class pickPlace:
                         self.arm_sender.display_trajectory(plan['arm'])
 
                 if self.use_hand:
-                    print('sending hand traj')
                     self.hand_sender.traj_client.wait_for_result()
                 if self.use_arm:
-                    print('sending arm traj')
                     self.arm_sender.traj_client.wait_for_result()
         except KeyboardInterrupt:
             self.shutdown()
@@ -264,6 +322,8 @@ class pickPlace:
 
 
     def shutdown(self, hard=False):
+        self.stop_saving()
+
         if self.use_hand:
             self.hand_sender.shutdown()
 

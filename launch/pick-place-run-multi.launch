@@ -10,8 +10,9 @@
 <arg name="replan" default="false" doc="The number of reps" />
 <arg name="start" default="0" doc="The number of reps" />
 
-<arg name="arm" default="true" doc="The number of reps" />
-<arg name="hand" default="true" doc="The number of reps" />
+<arg name="arm" default="true" doc="Use the arm" />
+<arg name="hand" default="true" doc="Use the hand" />
+<arg name="save" default="false" doc="Save data" />
 
 
 <!-- Load controller settings -->
@@ -25,7 +26,16 @@
       	<param name="start" type="int" value="$(arg start)" />
       	<param name="use_arm" type="bool" value="$(arg arm)" />
       	<param name="use_hand" type="bool" value="$(arg hand)" />
+      	<param name="save_data" type="bool" value="$(arg save)" />
     </node>
+
+
+    <node name="recorder_server" pkg="rosbag_recorder"
+    	  type="rosbag_recorder_server.py" respawn="false"
+    	  output="screen"
+    	  if="$(eval save)">
+    </node>
+
 
 
 </launch>
