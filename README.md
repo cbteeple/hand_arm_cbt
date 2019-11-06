@@ -11,6 +11,7 @@ A top-level package to coordinate a robot with a soft pneumatic hand.
 ### Software:
 - [ROS Melodic](http://wiki.ros.org/melodic/Installation)
 	- My [pressure_control_cbt](https://github.com/cbteeple/pressure_control_cbt) package for ROS
+	- My version of [rosbag_recorder](https://github.com/cbteeple/rosbag-recorder) for ROS
 	- The [ur_modern_driver](https://github.com/plusone-robotics/ur_modern_driver/tree/add-e-series-support) ROS package with e-series support (by plusone robotics)
 	- The [bond](https://github.com/ros/bond_core) package for ROS
 - Various python libraries:
