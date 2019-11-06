@@ -161,8 +161,9 @@ You can set up pick-and-place routine using joint configurations directly.
 	- `roslaunch pressure_controller_ros run_traj.launch`
 
 #### Pick-and-place actions
-- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME]`
-- `roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME]`
+`roslaunch hand_arm pick-place-run.launch traj:=[FILENAME]`
+
+`roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME]`
 
 - Use some optional arguments to turn the hand or arm on/off
 	- **hand** (_optional_, default: true) Use on the hand
