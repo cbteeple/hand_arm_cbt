@@ -109,8 +109,6 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 #### Cartesian Space
 You can set up pick-and-place routine using cartesian poses, then use MoveIt! to do the IK and motion planning.
 
-_This requires that you bring up the robot and start MoveIt! (See above)_
-
 - Build a routine
 	- Create a yaml file similar to the ones in "traj_setup"
 	- Set the poses and grasping settings you want to use.
@@ -118,14 +116,23 @@ _This requires that you bring up the robot and start MoveIt! (See above)_
 	- `roslaunch hand_arm pick-place-build-multi.launch traj:=[FILENAME]` Build a family of trajectories
 
 - Plan a routine
-	- `roslaunch hand_arm pick-place-plan.launch traj:=[FILENAME]`
-	- `roslaunch hand_arm pick-place-plan-multi.launch traj:=[FILENAME]` Build a family of trajectories
-	- This command uses MoveIt! to plan a trajectory based on poses, then saves the resulting joint space trajectory.
+	- _This requires that you bring up the robot and start MoveIt! See above._
+	- Plan a single trajectory
+		-`roslaunch hand_arm pick-place-plan.launch traj:=[FILENAME]`
+	- Plan a grid
+		- `roslaunch hand_arm pick-place-plan-multi.launch traj:=[FILENAME]` Build a family of trajectories
+	- These commands use MoveIt! to plan a trajectory based on poses, then saves the resulting joint space trajectory.
 
 - Run a planned routine
 	- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS]`
+		- **traj** (_required_) the filename of a single trajectory (no .yaml extension), or the folder name of a grid.
+		- **reps** (_optional_) Number of reps to perform
 	- `roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME] reps:=[# REPS]`
-
+		- **traj** (_string_) the filename of a single trajectory (no .yaml extension), or the folder name of a grid.
+		- **reps** (_int_) Number of reps to perform
+		- **start** (_int_) The permutation index to start at
+		- **save** (_bool_) Save data for each rep of each trajectory, then pickle them
+		
 
 - Run a live routine (this replans, but doesn't save)
 	- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS] replan:=true`
@@ -148,13 +155,13 @@ You can set up pick-and-place routine using joint configurations directly.
 ### Run trajectories on only one device
 #### Any Trajectory
 - Arm Only
-	- `roslaunch hand_arm arm-traj.launch traj:=[FILENAME] reps:=[# REPS]`
+	- `roslaunch hand_arm arm-traj.launch traj:=[FILENAME] reps:=[# REPS]` (Not yet implemented)
 - Hand Only
 	- `roslaunch pressure_controller_ros load_traj.launch profile:=example/planar2seg_demo`
 	- `roslaunch pressure_controller_ros run_traj.launch`
 
 #### Pick-and-place actions
 - Arm Only
-	- `roslaunch hand_arm pick-place-run.launch hand:=false traj:=[FILENAME] reps:=[# REPS]`
+	- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] hand:=false`
 - Hand Only
-	- `roslaunch hand_arm pick-place-run.launch arm:=false traj:=[FILENAME] reps:=[# REPS]`
+	- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] arm:=false`
