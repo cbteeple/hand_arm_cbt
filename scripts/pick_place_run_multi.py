@@ -28,6 +28,7 @@ import pickle
 import os
 import sys
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
 from hand_arm_cbt.arm_mover import trajSender as ur_traj_sender
@@ -63,6 +64,8 @@ class pickPlace:
         self.use_arm = rospy.get_param(rospy.get_name()+'/use_arm',True)
         self.use_hand = rospy.get_param(rospy.get_name()+'/use_hand',True)
         self.save_data = rospy.get_param(rospy.get_name()+'/save_data',False)
+        self.curr_file = None
+        self.curr_rep  = None
 
         
 
@@ -70,6 +73,7 @@ class pickPlace:
         self.filepath = os.path.join(filepath_traj)
         self.filepath =   os.path.join(self.filepath,self.traj_profile)
         self.save_data_folder = save_data_folder
+        self.save_folder_curr = None
 
         self.in_files = [f for f in os.listdir(self.filepath) if (os.path.isfile(os.path.join(self.filepath, f)) and f.endswith(".traj"))]
 
@@ -120,10 +124,10 @@ class pickPlace:
 
 
         if self.save_data:
-            self.out_filename=self.createOutFile(self.traj_profile + '.bag')
-            self.start_saving()
+            self.createOutFolder(self.traj_profile)
 
-    
+
+        
 
     def start_saving(self):
         rospy.wait_for_service('rosbag_recorder/record_topics')
@@ -152,20 +156,32 @@ class pickPlace:
             print "Service call failed: %s"%e
 
 
-    def createOutFile(self,filename):
-        outFile=os.path.abspath(os.path.join(os.path.expanduser('~'),self.save_data_folder,filename))
-        print(outFile)
 
-        dirname = os.path.dirname(outFile)
-        print(dirname)
+    def createOutFolder(self,filename):
+        now = datetime.now()
+        self.save_folder_curr = filename + "_" + now.strftime("%m%d%Y_%H%M%S")
+
+        dirname = os.path.abspath(os.path.join(os.path.expanduser('~'),self.save_data_folder,self.save_folder_curr))
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-        i = 0
-        while os.path.exists("%s_%04d.txt" % (outFile,i) ):
-            i += 1
+        
 
-        return "%s_%04d.txt" % (outFile,i)
+
+    def createOutFile(self,filename=None):
+
+        if not filename:
+            print(self.curr_file)
+            print(self.curr_rep)
+            if (self.curr_file is None) or (self.curr_rep is None):
+                return None
+
+            filename = '%s_rep%04d'%(self.curr_file.replace('.traj',''),self.curr_rep)
+
+        outFile=os.path.abspath(os.path.join(os.path.expanduser('~'),self.save_data_folder,self.save_folder_curr,filename))
+        print(outFile)
+
+        return "%s.bag" % (outFile)
 
 
 
@@ -177,6 +193,7 @@ class pickPlace:
         try:
 
             for file in self.in_files:
+                self.curr_file = file
                 print('\n'+file)
                 config_file =   os.path.join(self.filepath,file)
 
@@ -222,22 +239,17 @@ class pickPlace:
 
 
     def go_to_start(self):
-        try:
-            # Start the trajectories
-            if self.use_hand:
-                self.hand_sender.go_to_start(self.operation_sequence[0]['hand'], reset_time, blocking=False)
-            if self.use_arm:
-                self.arm_sender.go_to_start(self.operation_sequence[0]['arm'], reset_time, blocking=False)
+        # Start the trajectories
+        if self.use_hand:
+            self.hand_sender.go_to_start(self.operation_sequence[0]['hand'], reset_time, blocking=False)
+        if self.use_arm:
+            self.arm_sender.go_to_start(self.operation_sequence[0]['arm'], reset_time, blocking=False)
 
-            # Wait for the traj to finish
-            if self.use_hand:
-                self.hand_sender.traj_client.wait_for_result()
-            if self.use_arm:
-                self.arm_sender.traj_client.wait_for_result()
-        
-        except KeyboardInterrupt:
-            self.shutdown()
-            raise
+        # Wait for the traj to finish
+        if self.use_hand:
+            self.hand_sender.traj_client.wait_for_result()
+        if self.use_arm:
+            self.arm_sender.traj_client.wait_for_result()
 
 
 
@@ -286,43 +298,44 @@ class pickPlace:
 
 
     def excecute_sequence(self):
-        try:
-            for plan in self.operation_plans:
-                if (plan['hand'] is not None) and (self.use_hand):
-                    self.hand_sender.execute_traj(plan['hand'], blocking=False)
+        for plan in self.operation_plans:
+            if (plan['hand'] is not None) and (self.use_hand):
+                self.hand_sender.execute_traj(plan['hand'], blocking=False)
 
-                if (plan['arm'] is not None) and (self.use_arm):
-                    if not Fake:
-                        self.arm_sender.execute_traj(plan['arm'], blocking=False)
-                    else:
-                        self.arm_sender.display_trajectory(plan['arm'])
+            if (plan['arm'] is not None) and (self.use_arm):
+                if not Fake:
+                    self.arm_sender.execute_traj(plan['arm'], blocking=False)
+                else:
+                    self.arm_sender.display_trajectory(plan['arm'])
 
-                if self.use_hand:
-                    self.hand_sender.traj_client.wait_for_result()
-                if self.use_arm:
-                    self.arm_sender.traj_client.wait_for_result()
-        except KeyboardInterrupt:
-            self.shutdown()
-            raise
+            if self.use_hand:
+                self.hand_sender.traj_client.wait_for_result()
+            if self.use_arm:
+                self.arm_sender.traj_client.wait_for_result()
 
             
         
     def rep_sequence(self, wait_before_each = True):
-        try:
-            for idx in range(self.num_reps):
-                print('REP: %d'%(idx))
-                if wait_before_each:
-                    inp = raw_input("Execute Action? (Press ENTER)")
-                self.excecute_sequence()
-                self.go_to_start()
+        for idx in range(self.num_reps):
+            self.curr_rep=idx
+            print('REP: %d'%(idx))
+            if wait_before_each:
+                inp = raw_input("Execute Action? (Press ENTER)")
 
-        except KeyboardInterrupt:
-            self.shutdown()
-            raise
+            if self.save_data:
+                self.out_filename=self.createOutFile()
+                self.start_saving()
+
+            self.excecute_sequence()
+
+            if self.save_data:
+                self.stop_saving()
+            self.go_to_start()
 
 
     def shutdown(self, hard=False):
-        self.stop_saving()
+        if self.save_data:
+            self.stop_saving()
 
         if self.use_hand:
             self.hand_sender.shutdown()
