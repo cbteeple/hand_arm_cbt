@@ -28,12 +28,19 @@ A top-level package to coordinate a robot with a soft pneumatic hand.
 
 
 ## Usage
-**Unless specified, all commands assume you want to run a command using BOTH the arm and a hand. If you want to run on only one device, see the [Run trajectories on only one device](#Run-trajectories-on-only-one-device) section below.**
+**Unless specified, all commands assume you want to run a command using BOTH the arm and a hand. If you want to run on only one device, see the [Run trajectories on only one device](#any-device) section below.**
 
 - [Prerequisites](#prereqs)
-- [Move to specified joint positions](#joints)
-- [Teach the robot](#teach)
-- [Set up motion routines](#motion-setup)
+- Manual Control
+	- [Move to specified joint positions](#joints)
+	- [Teach the robot](#teach)
+	
+- Automatic Control
+	- [Set up motion routines](#motion-setup)
+	- [Do pick-and-place actions](#pick-place)
+	- [Run trajectories on only one device](#any-device)
+
+
 
 
 
@@ -119,8 +126,11 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 	- In *sequence* >> *startup*, set the startup trajectory segments for each device
 	- In *sequence* >> *operations*, set the sequence of trajectory segments to use. These should be the exact names of segments you entered before.
 
+<a name="pick-place"/>
 
 ### Do pick-and-place actions:
+
+<a name="pick-place-cartesian"/>
 
 #### Cartesian Space
 You can set up pick-and-place routine using cartesian poses, then use MoveIt! to do the IK and motion planning.
@@ -153,6 +163,7 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 - Run a live routine (this replans, but doesn't save)
 	- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS] replan:=true`
 
+<a name="pick-place-joint"/>
 
 #### Joint Space:
 You can set up pick-and-place routine using joint configurations directly. 
@@ -163,6 +174,8 @@ You can set up pick-and-place routine using joint configurations directly.
 - Run the pick and place routine like normal.
 	- `roslaunch hand_arm pick-place-run.launch traj:=pick_front speed_factor:=1.0 reps:=20`
 
+
+<a name="any-device"/>
 
 ### Run trajectories on only one device
 #### Any Trajectory
