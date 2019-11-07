@@ -103,7 +103,7 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 ### Set up arbitrary motion routines manually:
 
 1. Create a yaml file similar to the ones in "trajectories"
-	- For example, take a look at "_trajectories/examples/manually_built/manually_built.yaml_" in a text editor
+	- For example, take a look at "**_trajectories/examples/manually_built/manually_built.yaml_**" in a text editor
 
 2. Set up arm trajectories
 	- Joint Space
@@ -131,15 +131,15 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 
 ### Pick-and-Place Actions (Tutorial):
 
-In this tutorial we will use the files located in "_traj_setup/examples_" and "_trajectories/examples_". When you pass the names of these files to ROS in the `roslaunch` command, you never need to use file extensions.
+In this tutorial we will use the files located in "**_traj_setup/examples_**" and "**_trajectories/examples_**". When you pass the names of these files to ROS in the `roslaunch` command, you never need to use file extensions.
 
 #### Cartesian Space
 You can set up pick-and-place routine using cartesian poses, then use MoveIt! to do the IK and motion planning. 
 
 - Build a routine
 	- Open the following YAML files in a text editor
-		- "_traj_setup/examples/2finger_single.yaml_" (building a single pick-and-place action)
-		- "_traj_setup/examples/2finger_grid.yaml_" (building a grid of pick-and-place actions in space)
+		- "**_traj_setup/examples/2finger_single.yaml_**" (building a single pick-and-place action)
+		- "**_traj_setup/examples/2finger_grid.yaml_**" (building a grid of pick-and-place actions in space)
 	- Set the poses and grasping settings you want to use.
 	- `roslaunch hand_arm pick-place-build.launch traj:=examples/2finger_single` Build a single trajectory
 	- `roslaunch hand_arm pick-place-build-multi.launch traj:=examples/2finger_grid` Build a family of trajectories
@@ -171,7 +171,7 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 #### Joint Space:
 You can set up pick-and-place routines using joint configurations directly. 
 1. Build an routine manually
-	- Open "_trajectories/examples/manually_built/joint_traj.yaml_" in a text editor
+	- Open "**_trajectories/examples/manually_built/joint_traj.yaml_**" in a text editor
 	- In *sequence* >> *setup*, the *arm_traj_space* is set to "*joint*"
 	- In *arm*, the move segments are defined in joint positions.
 	- In *hand*, the pressures are defined like normal 
