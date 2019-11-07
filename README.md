@@ -53,11 +53,11 @@ Move to zero:
 Move to home:
 `rosrun hand_arm move_home.py go 1`
 
-Move to some other position:
-`rosrun hand_arm move_home.py go [POSITION_NUMBER]`
+Move to some other stored position:
+`rosrun hand_arm move_home.py go [POSITION_NUMBER]` _(not yet implemented)_
 
 Set a position (*all but the zero position can be set*):
-`rosrun hand_arm move_home.py set [POSITION_NUMBER]`
+`rosrun hand_arm move_home.py set [POSITION_NUMBER]` _(not yet implemented)_
 
 
 ### Teach the robot:
@@ -116,7 +116,7 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 	- `roslaunch hand_arm pick-place-build-multi.launch traj:=[FILENAME]` Build a family of trajectories
 
 - Plan a routine
-	- _This requires that you bring up the robot and start MoveIt! See above._
+	- _This requires that you bring up the robot and start MoveIt! See [Prerequisites](#Prerequisites) Section._
 	- Plan a single trajectory
 		-`roslaunch hand_arm pick-place-plan.launch traj:=[FILENAME]`
 	- Plan a grid
@@ -125,10 +125,12 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 
 - Run a planned routine
 	- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS]`
-		- **traj** (_required_) the filename of a single trajectory (no .yaml extension), or the folder name of a grid.
+		- **traj** (_required_) the filename of a single trajectory (no .yaml extension)
 		- **reps** (_optional_, default: 1) Number of reps to perform
+		- **save** (_optional_, default: false) Save data for each rep of the trajectory, then pickle them
+
 	- `roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME] reps:=[# REPS]`
-		- **traj** (_required_) the filename of a single trajectory (no .yaml extension), or the folder name of a grid.
+		- **traj** (_required_) the folder name of a grid.
 		- **reps** (_optional_, default: 1) Number of reps to perform
 		- **start** (_optional_, default: 0) The permutation index to start at
 		- **save** (_optional_, default: false) Save data for each rep of each trajectory, then pickle them
@@ -140,15 +142,11 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 
 #### Joint Space:
 You can set up pick-and-place routine using joint configurations directly. 
-- Build an action automatically
-	- Follow the steps in the "Cartesian" section to build a pick-and-place trajectory using end effector poses
-
 - Build an routine manually
 	- Create a yaml file similar to the ones in "trajectories"
 	- In *sequence* >> *setup*, change the *arm_traj_space* to "*joint*"
 
-
-- Do pick and place
+- Run the pick and place routine like normal.
 	- `roslaunch hand_arm pick-place-run.launch traj:=pick_front speed_factor:=1.0 reps:=20`
 
 
