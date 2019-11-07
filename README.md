@@ -11,6 +11,7 @@ A top-level package to coordinate a robot with a soft pneumatic hand.
 ### Software:
 - [ROS Melodic](http://wiki.ros.org/melodic/Installation)
 	- My [pressure_control_cbt](https://github.com/cbteeple/pressure_control_cbt) package for ROS
+	- My version of [rosbag_recorder](https://github.com/cbteeple/rosbag-recorder) for ROS
 	- The [ur_modern_driver](https://github.com/plusone-robotics/ur_modern_driver/tree/add-e-series-support) ROS package with e-series support (by plusone robotics)
 	- The [bond](https://github.com/ros/bond_core) package for ROS
 - Various python libraries:
@@ -27,9 +28,25 @@ A top-level package to coordinate a robot with a soft pneumatic hand.
 
 
 ## Usage
-**Unless specified, all commands assume you want to run a command using BOTH the arm and a hand. If you want to run on only one device, see the _"Run trajectories on only one device"_ section below.**
+_Unless specified, all commands assume you want to run a command using BOTH the arm and a hand. If you want to run on only one device, see the [Run trajectories on only one device](#any-device) section below._
 
-### Prerequisits
+- [Prerequisites](#prereqs)
+- Manual Control
+	- [Move to specified joint positions](#joints)
+	- [Teach the robot](#teach)
+	
+- Automatic Control
+	- [Set up motion routines](#motion-setup)
+	- [Do pick-and-place actions](#pick-place)
+	- [Run trajectories on only one device](#any-device)
+
+
+
+
+
+<a name="prereqs"/>
+
+### Prerequisites
 Before you can control the robot and hand, you first need to start some ROS servers:
 - Start the robot control server
 	- `roslaunch ur_modern_driver ur5e_bringup.launch limited:=true robot_ip:=192.168.1.2`
@@ -45,6 +62,8 @@ Before you can control the robot and hand, you first need to start some ROS serv
 		- `roslaunch ur5_e_moveit_config moveit_rviz.launch config:=true`
 
 
+<a name="joints"/>
+
 ### Move to specified joint positions:
 Move to zero:
 `rosrun hand_arm move_home.py go 0`
@@ -52,12 +71,14 @@ Move to zero:
 Move to home:
 `rosrun hand_arm move_home.py go 1`
 
-Move to some other position:
-`rosrun hand_arm move_home.py go [POSITION_NUMBER]`
+Move to some other stored position:
+`rosrun hand_arm move_home.py go [POSITION_NUMBER]` _(not yet implemented)_
 
 Set a position (*all but the zero position can be set*):
-`rosrun hand_arm move_home.py set [POSITION_NUMBER]`
+`rosrun hand_arm move_home.py set [POSITION_NUMBER]` _(not yet implemented)_
 
+
+<a name="teach"/>
 
 ### Teach the robot:
 When using teach mode, the robot will be put into freedrive mode, enabling you to push it around.
@@ -75,6 +96,9 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 - Replay a trajectory:
 	- `rosrun hand_arm replay.py [FILENAME]`
 
+
+
+<a name="motion-setup"/>
 
 ### Set up motion routines:
 
@@ -102,58 +126,71 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 	- In *sequence* >> *startup*, set the startup trajectory segments for each device
 	- In *sequence* >> *operations*, set the sequence of trajectory segments to use. These should be the exact names of segments you entered before.
 
+<a name="pick-place"/>
 
 ### Do pick-and-place actions:
+
+<a name="pick-place-cartesian"/>
 
 #### Cartesian Space
 You can set up pick-and-place routine using cartesian poses, then use MoveIt! to do the IK and motion planning.
 
-_This requires that you bring up the robot and start MoveIt! (See above)_
-
 - Build a routine
 	- Create a yaml file similar to the ones in "traj_setup"
 	- Set the poses and grasping settings you want to use.
-	- `roslaunch hand_arm pick-place-build.launch traj:=[FILENAME]` This command automatically builds a trajectory usig the format described above.
+	- `roslaunch hand_arm pick-place-build.launch traj:=[FILENAME]` This command automatically builds a trajectory using the format described above.
 	- `roslaunch hand_arm pick-place-build-multi.launch traj:=[FILENAME]` Build a family of trajectories
 
 - Plan a routine
-	- `roslaunch hand_arm pick-place-plan.launch traj:=[FILENAME]`
-	- `roslaunch hand_arm pick-place-plan-multi.launch traj:=[FILENAME]` Build a family of trajectories
-	- This command uses MoveIt! to plan a trajectory based on poses, then saves the resulting joint space trajectory.
+	- _This requires that you bring up the robot and start MoveIt! See [Prerequisites](#Prerequisites) section above._
+	- Plan a single trajectory: `roslaunch hand_arm pick-place-plan.launch traj:=[FILENAME]`
+	- Plan a grid: `roslaunch hand_arm pick-place-plan-multi.launch traj:=[FILENAME]` Build a family of trajectories
+	- These commands use MoveIt! to plan a trajectory based on poses, then saves the resulting joint space trajectory.
 
 - Run a planned routine
-	- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS]`
-	- `roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME] reps:=[# REPS]`
+	- Run a single trajectory: `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS]`
+		- **traj** (_required_) the filename of a single trajectory (no .yaml extension)
+		- **reps** (_optional_, default: 1) Number of reps to perform
+		- **save** (_optional_, default: false) Save data for each rep of the trajectory, then pickle them
 
+	- Run a grid: `roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME] reps:=[# REPS]`
+		- **traj** (_required_) the folder name of a grid.
+		- **reps** (_optional_, default: 1) Number of reps to perform
+		- **start** (_optional_, default: 0) The permutation index to start at
+		- **save** (_optional_, default: false) Save data for each rep of each trajectory, then pickle them
+		
 
 - Run a live routine (this replans, but doesn't save)
 	- `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS] replan:=true`
 
+<a name="pick-place-joint"/>
 
 #### Joint Space:
 You can set up pick-and-place routine using joint configurations directly. 
-- Build an action automatically
-	- Follow the steps in the "Cartesian" section to build a pick-and-place trajectory using end effector poses
-
 - Build an routine manually
 	- Create a yaml file similar to the ones in "trajectories"
 	- In *sequence* >> *setup*, change the *arm_traj_space* to "*joint*"
 
-
-- Do pick and place
+- Run the pick and place routine like normal.
 	- `roslaunch hand_arm pick-place-run.launch traj:=pick_front speed_factor:=1.0 reps:=20`
 
+
+<a name="any-device"/>
 
 ### Run trajectories on only one device
 #### Any Trajectory
 - Arm Only
-	- `roslaunch hand_arm arm-traj.launch traj:=[FILENAME] reps:=[# REPS]`
+	- `roslaunch hand_arm arm-traj.launch traj:=[FILENAME] reps:=[# REPS]` (Not yet implemented)
 - Hand Only
 	- `roslaunch pressure_controller_ros load_traj.launch profile:=example/planar2seg_demo`
 	- `roslaunch pressure_controller_ros run_traj.launch`
 
 #### Pick-and-place actions
-- Arm Only
-	- `roslaunch hand_arm pick-place-run.launch hand:=false traj:=[FILENAME] reps:=[# REPS]`
-- Hand Only
-	- `roslaunch hand_arm pick-place-run.launch arm:=false traj:=[FILENAME] reps:=[# REPS]`
+`roslaunch hand_arm pick-place-run.launch traj:=[FILENAME]`
+
+`roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME]`
+
+- Use some optional arguments to turn the hand or arm on/off
+	- **hand** (_optional_, default: true) Use on the hand
+	- **arm** (_optional_, default: true) Use on the arm
+
