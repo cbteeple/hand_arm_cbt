@@ -28,7 +28,7 @@ A top-level package to coordinate a robot with a soft pneumatic hand.
 
 
 ## Usage
-**Unless specified, all commands assume you want to run a command using BOTH the arm and a hand. If you want to run on only one device, see the [Run trajectories on only one device](#any-device) section below.**
+_Unless specified, all commands assume you want to run a command using BOTH the arm and a hand. If you want to run on only one device, see the [Run trajectories on only one device](#any-device) section below._
 
 - [Prerequisites](#prereqs)
 - Manual Control
