@@ -1,0 +1,67 @@
+# This file was made as an example (It's actually based on an auto-generated pick-and-place action)
+
+
+sequence:
+    # Set up the sequence of motion subcomponents to use
+    # (each subcomponent must be defined below)
+    operations:
+    - {arm: pre,   hand: startup}
+    - {arm: false, hand: grasp}
+    - {arm: move,  hand: false}
+    - {arm: false, hand: release}
+    - {arm: post,  hand: false}
+
+    # Define the coodinate space the trajectories are built in
+    setup:
+        arm_traj_space: cartesian
+        hand_traj_space: pressure
+    
+    # Define the trajectory subcomponents to use at the beginning
+    startup:
+        arm: pre
+        hand: startup}
+
+
+# Define arm trajectory subcomponents
+arm:
+    # Define the 
+    move:
+    - orientation: [0.5, 0.5, -0.5, 0.5]    #[quaternions]
+        position: [-0.18, 0.55, 0.205]      #[meters]
+
+    - orientation: [0.5, 0.5, -0.5, 0.5]    #[quaternions]
+        position: [-0.18, 0.55, 0.405]      #[meters]
+
+    - orientation: [0.5, 0.5, -0.5, 0.5]    #[quaternions]
+        position: [0.2, 0.55, 0.42]         #[meters]
+
+    - orientation: [0.5, 0.5, -0.5, 0.5]    #[quaternions]
+        position: [0.2, 0.55, 0.22]         #[meters]
+
+    post:
+    - orientation: [0.5, 0.5, -0.5, 0.5]    #[quaternions]
+        position: [0.2, 0.55, 0.22]         #[meters]
+    - orientation: [0.707, 0.0, 0.0, 0.707] #[quaternions]
+        position: [0.2, 0.55, 0.4]          #[meters]
+
+    pre:
+    - orientation: [0.5, 0.5, -0.5, 0.5]    #[quaternions]
+        position: [-0.2, 0.55, 0.4]         #[meters]
+    - orientation: [0.5, 0.5, -0.5, 0.5]    #[quaternions]
+        position: [-0.18, 0.55, 0.205]      #[meters]
+
+# Define hand trajectory subcomponents
+hand:
+    grasp:
+    - [0.0, 0.0, 0.0, 0.0, 0.0]     #[sec  psi  psi  pos  psi]
+    - [2.0, 15.0, 0.0, 15.0, 0.0]   #[sec  psi  psi  psi  psi]
+    - [3.0, 15.0, 0.0, 15.0, 0.0]   #[sec  psi  psi  psi  psi]
+
+    release:
+    - [0.0, 15.0, 0.0, 15.0, 0.0]   #[sec  psi  psi  psi  psi]
+    - [2.0, 0.0, 0.0, 0.0, 0.0]     #[sec  psi  psi  psi  psi]
+    - [3.0, 0.0, 0.0, 0.0, 0.0]     #[sec  psi  psi  psi  psi]
+
+    startup:
+    - [0.0, 0.0, 0.0, 0.0, 0.0]     #[sec  psi  psi  psi  psi]
+    - [0.0, 0.0, 0.0, 0.0, 0.0]     #[sec  psi  psi  psi  psi]

@@ -1,0 +1,75 @@
+# This file was made as an example
+
+sequence:
+    # Set up the sequence of move segments to use
+    #   - Each move segment must be defined below.
+    #   - Adjacent move segments must flow into one another (IMPORTANT)
+    #       - (Last entry of the first segment must have the same joint poisition
+    #          as the first entry of the second segment)
+    operations:
+    - {arm: move0,   hand: startup}
+    - {arm: false, hand: grasp}
+    - {arm: move1,  hand: false}
+    - {arm: false, hand: release}
+    - {arm: move2,  hand: false}
+
+    # Define the coodinate space the trajectories are built in
+    setup:
+        arm_traj_space: joint
+        hand_traj_space: pressure
+    
+    # Define the trajectory subcomponents to use at the beginning
+    startup:
+        arm: move0
+        hand: startup}
+
+
+# Define arm trajectory subcomponents
+arm:
+    move0:
+    -   joints_pos: [0.55194091796875, -1.1657193464091797, 0.8279197851764124, -0.0856812757304688,
+        1.2985548973083496, -1.1019604841815394]
+        time: 0.0
+
+
+    -   joints_pos: [0.8256011009216309, -1.4658101362041016, 2.48220664659609, -1.0026353162578125,
+        0.9288854598999023, -1.07166034380068] #[radians]
+        time: 5.0
+
+    move1:
+    -   joints_pos: [0.8256011009216309, -1.4658101362041016, 2.48220664659609, -1.0026353162578125,
+        0.9288854598999023, -1.07166034380068] #[radians]
+        time: 0.0
+
+    -   joints_pos: [0.8255653381347656, -1.4657982152751465, 2.4822543303119105, -1.0026233953288575,
+        0.9288616180419922, -1.0716126600848597] #[radians]
+        time: 1.0
+
+    -   joints_pos: [0.8255772590637207, -1.4658101362041016, 2.4822428862201136, -1.002587155704834,
+        0.928837776184082, -1.0716365019427698] #[radians]
+        time: 2.0
+
+    move2:
+    -   joints_pos: [0.8255772590637207, -1.4658101362041016, 2.4822428862201136, -1.002587155704834,
+        0.928837776184082, -1.0716365019427698] #[radians]
+        time: 0.0         #[meters]
+
+    -   joints_pos: [1.8246607780456543, -1.3581836980632325, 0.7855184713946741, 0.37065426885571284,
+        1.2959132194519043, -1.2379911581622522]
+        time: 5.0
+
+# Define hand trajectory subcomponents
+hand:
+    grasp:
+    - [0.0, 0.0, 0.0, 0.0, 0.0]     #[sec  psi  psi  pos  psi]
+    - [2.0, 15.0, 0.0, 15.0, 0.0]   #[sec  psi  psi  psi  psi]
+    - [3.0, 15.0, 0.0, 15.0, 0.0]   #[sec  psi  psi  psi  psi]
+
+    release:
+    - [0.0, 15.0, 0.0, 15.0, 0.0]   #[sec  psi  psi  psi  psi]
+    - [2.0, 0.0, 0.0, 0.0, 0.0]     #[sec  psi  psi  psi  psi]
+    - [3.0, 0.0, 0.0, 0.0, 0.0]     #[sec  psi  psi  psi  psi]
+
+    startup:
+    - [0.0, 0.0, 0.0, 0.0, 0.0]     #[sec  psi  psi  psi  psi]
+    - [0.0, 0.0, 0.0, 0.0, 0.0]     #[sec  psi  psi  psi  psi]
