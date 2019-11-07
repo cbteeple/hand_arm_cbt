@@ -100,9 +100,10 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 
 <a name="motion-setup"/>
 
-### Set up motion routines:
+### Set up arbitrary motion routines manually:
 
 1. Create a yaml file similar to the ones in "trajectories"
+	- For example, take a look at "_trajectories/examples/manually_built/manually_built.yaml_" in a text editor
 
 2. Set up arm trajectories
 	- Joint Space
@@ -128,32 +129,34 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 
 <a name="pick-place"/>
 
-### Do pick-and-place actions:
+### Pick-and-Place Actions (Tutorial):
 
-<a name="pick-place-cartesian"/>
+In this tutorial we will use the files located in "_traj_setup/examples_" and "_trajectories/examples_". When you pass the names of these files to ROS in the `roslaunch` command, you never need to use file extensions.
 
 #### Cartesian Space
-You can set up pick-and-place routine using cartesian poses, then use MoveIt! to do the IK and motion planning.
+You can set up pick-and-place routine using cartesian poses, then use MoveIt! to do the IK and motion planning. 
 
 - Build a routine
-	- Create a yaml file similar to the ones in "traj_setup"
+	- Open the following YAML files in a text editor
+		- "_traj_setup/examples/2finger_single.yaml_" (building a single pick-and-place action)
+		- "_traj_setup/examples/2finger_grid.yaml_" (building a grid of pick-and-place actions in space)
 	- Set the poses and grasping settings you want to use.
-	- `roslaunch hand_arm pick-place-build.launch traj:=[FILENAME]` This command automatically builds a trajectory using the format described above.
-	- `roslaunch hand_arm pick-place-build-multi.launch traj:=[FILENAME]` Build a family of trajectories
+	- `roslaunch hand_arm pick-place-build.launch traj:=examples/2finger_single` Build a single trajectory
+	- `roslaunch hand_arm pick-place-build-multi.launch traj:=examples/2finger_grid` Build a family of trajectories
 
 - Plan a routine
 	- _This requires that you bring up the robot and start MoveIt! See [Prerequisites](#Prerequisites) section above._
-	- Plan a single trajectory: `roslaunch hand_arm pick-place-plan.launch traj:=[FILENAME]`
-	- Plan a grid: `roslaunch hand_arm pick-place-plan-multi.launch traj:=[FILENAME]` Build a family of trajectories
-	- These commands use MoveIt! to plan a trajectory based on poses, then saves the resulting joint space trajectory.
+	- Plan a single trajectory: `roslaunch hand_arm pick-place-plan.launch traj:=examples/2finger_single`
+	- Plan a grid: `roslaunch hand_arm pick-place-plan-multi.launch traj:=examples/2finger_grid` Build a family of trajectories
+	- These commands use MoveIt! to plan trajectories based on poses, then save the resulting joint-space trajectories.
 
 - Run a planned routine
-	- Run a single trajectory: `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS]`
+	- Run a single trajectory: `roslaunch hand_arm pick-place-run.launch traj:=examples/2finger_single reps:=[# REPS]`
 		- **traj** (_required_) the filename of a single trajectory (no .yaml extension)
 		- **reps** (_optional_, default: 1) Number of reps to perform
 		- **save** (_optional_, default: false) Save data for each rep of the trajectory, then pickle them
 
-	- Run a grid: `roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME] reps:=[# REPS]`
+	- Run a grid: `roslaunch hand_arm pick-place-run-multi.launch traj:=examples/2finger_grid`
 		- **traj** (_required_) the folder name of a grid.
 		- **reps** (_optional_, default: 1) Number of reps to perform
 		- **start** (_optional_, default: 0) The permutation index to start at
@@ -166,14 +169,19 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 <a name="pick-place-joint"/>
 
 #### Joint Space:
-You can set up pick-and-place routine using joint configurations directly. 
-- Build an routine manually
-	- Create a yaml file similar to the ones in "trajectories"
-	- In *sequence* >> *setup*, change the *arm_traj_space* to "*joint*"
+You can set up pick-and-place routines using joint configurations directly. 
+1. Build an routine manually
+	- Open "_trajectories/examples/manually_built/joint_traj.yaml_" in a text editor
+	- In *sequence* >> *setup*, the *arm_traj_space* is set to "*joint*"
+	- In *arm*, the move segments are defined in joint positions.
+	- In *hand*, the pressures are defined like normal 
 
-- Run the pick and place routine like normal.
-	- `roslaunch hand_arm pick-place-run.launch traj:=pick_front speed_factor:=1.0 reps:=20`
+2. Run the trajectory planner
+	- `roslaunch hand_arm pick-place-plan.launch traj:=examples/manually_built/joint_traj`
 
+3. Run the pick and place routine like normal.
+	- `roslaunch hand_arm pick-place-run.launch traj:=examples/manually_built/joint_traj speed_factor:=1.0 reps:=20`
+	
 
 <a name="any-device"/>
 
