@@ -128,7 +128,7 @@ When using teach mode, the robot will be put into freedrive mode, enabling you t
 
 <a name="pick-place"/>
 
-### Do pick-and-place actions:
+### Pick-and-Place Actions (Tutorial):
 
 <a name="pick-place-cartesian"/>
 
