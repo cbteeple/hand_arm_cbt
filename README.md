@@ -138,7 +138,7 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 - Build a routine
 	- Create a yaml file similar to the ones in "traj_setup"
 	- Set the poses and grasping settings you want to use.
-	- `roslaunch hand_arm pick-place-build.launch traj:=[FILENAME]` This command automatically builds a trajectory usig the format described above.
+	- `roslaunch hand_arm pick-place-build.launch traj:=[FILENAME]` This command automatically builds a trajectory using the format described above.
 	- `roslaunch hand_arm pick-place-build-multi.launch traj:=[FILENAME]` Build a family of trajectories
 
 - Plan a routine
