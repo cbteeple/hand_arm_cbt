@@ -41,7 +41,7 @@ hand:
   idle_pressure:  [-1,-1,-1,-1,0,0,0]  #[psi]
   grasp_pressure: [13,13,13,13,0,0,0] #[psi]
 
-  grasp_time: 1.0    #[sec]
+  grasp_time: 4.0    #[sec]
   wait_after_grasp: 1.0    #[sec]
 
   release_time: 0.1  #[sec]
