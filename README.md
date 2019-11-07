@@ -122,12 +122,12 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 	- These commands use MoveIt! to plan a trajectory based on poses, then saves the resulting joint space trajectory.
 
 - Run a planned routine
-	- Plan a single trajectory: `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS]`
+	- Run a single trajectory: `roslaunch hand_arm pick-place-run.launch traj:=[FILENAME] reps:=[# REPS]`
 		- **traj** (_required_) the filename of a single trajectory (no .yaml extension)
 		- **reps** (_optional_, default: 1) Number of reps to perform
 		- **save** (_optional_, default: false) Save data for each rep of the trajectory, then pickle them
 
-	- Plan a grid: `roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME] reps:=[# REPS]`
+	- Run a grid: `roslaunch hand_arm pick-place-run-multi.launch traj:=[FILENAME] reps:=[# REPS]`
 		- **traj** (_required_) the folder name of a grid.
 		- **reps** (_optional_, default: 1) Number of reps to perform
 		- **start** (_optional_, default: 0) The permutation index to start at
