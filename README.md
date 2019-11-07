@@ -141,17 +141,17 @@ You can set up pick-and-place routine using cartesian poses, then use MoveIt! to
 		- "**_traj_setup/examples/2finger_single.yaml_**" (building a single pick-and-place action)
 		- "**_traj_setup/examples/2finger_grid.yaml_**" (building a grid of pick-and-place actions in space)
 	- Set the poses and grasping settings you want to use.
-	- `roslaunch hand_arm pick-place-build.launch traj:=examples/2finger_single` Build a single trajectory
+	- `roslaunch hand_arm pick-place-build-multi.launch traj:=examples/2finger_single` Build a single trajectory
 	- `roslaunch hand_arm pick-place-build-multi.launch traj:=examples/2finger_grid` Build a family of trajectories
 
 - Plan a routine
 	- _This requires that you bring up the robot and start MoveIt! See [Prerequisites](#Prerequisites) section above._
-	- Plan a single trajectory: `roslaunch hand_arm pick-place-plan.launch traj:=examples/2finger_single`
+	- Plan a single trajectory: `roslaunch hand_arm pick-place-plan-multi.launch traj:=examples/2finger_single`
 	- Plan a grid: `roslaunch hand_arm pick-place-plan-multi.launch traj:=examples/2finger_grid` Build a family of trajectories
 	- These commands use MoveIt! to plan trajectories based on poses, then save the resulting joint-space trajectories.
 
 - Run a planned routine
-	- Run a single trajectory: `roslaunch hand_arm pick-place-run.launch traj:=examples/2finger_single reps:=[# REPS]`
+	- Run a single trajectory: `roslaunch hand_arm pick-place-run-multi.launch traj:=examples/2finger_single reps:=[# REPS]`
 		- **traj** (_required_) the filename of a single trajectory (no .yaml extension)
 		- **reps** (_optional_, default: 1) Number of reps to perform
 		- **save** (_optional_, default: false) Save data for each rep of the trajectory, then pickle them
