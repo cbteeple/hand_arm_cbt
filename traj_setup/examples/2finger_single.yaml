@@ -1,46 +1,53 @@
 
 settings:
-  boomerang: true
-  type: grid # options: single, grid
+  # The type of grid pattern to form
+  type: single # options: single, grid
 
+  # Do a pick-and-place routine from "grasp_pose" to "release_pose", then reverse it
+  # (so that the object ends up back at its initial position)
+  boomerang: true # (THIS IS NOT YET IMPLEMENTED)
+
+# Define all important poses for the arm, and some other settings
 arm:
   initial_pose:
-    position: [-0.1, 0.55, 0.06]
-    orientation: [ 0.707, 0.0, 0.0,  0.707]
+    position: [-0.1, 0.55, 0.06]            #[meters]
+    orientation: [ 0.707, 0.0, 0.0,  0.707] #[use quaternions]
 
   grasp_pose:
-    position: [0.1, 0.55, 0.06]
-    orientation: [ 0.707, 0.0, 0.0,  0.707]
+    position: [0.1, 0.55, 0.06]             #[meters]
+    orientation: [ 0.707, 0.0, 0.0,  0.707] #[use quaternions]
 
   release_pose:
-    position: [0.1, 0.45, 0.06]
-    orientation: [ 0.707, 0.0, 0.0,  0.707]
+    position: [0.1, 0.45, 0.06]             #[meters]
+    orientation: [ 0.707, 0.0, 0.0,  0.707] #[use quaternions]
 
   final_pose:
-    position: [-0.1, 0.45, 0.06]
-    orientation: [ 0.707, 0.0, 0.0,  0.707]
+    position: [-0.1, 0.45, 0.06]            #[meters]
+    orientation: [ 0.707, 0.0, 0.0,  0.707] #[use quaternions]
 
-  pickup_height: 0.1 #[meters]
+  pickup_height: 0.01 #[meters]
 
+  # Set up the grid (these settings are unused if the type is "single")
   grid:
-    # Number of points on each side [number] in (x, y, z) order
-    num_pts: [1,   1,  1]
+    # Number of points on each side in (x, y, z) order
+    num_pts: [] #[numbers]
 
-    # Dimension of each grid side [meters] in (x, y, z) order
-    dims: [0, 0,  0]
+    # Dimension of each grid side in (x, y, z) order
+    dims: [] #[meters]
 
     # Basis shifting (maybe you don't want the ref frame to be the robot's home frame)
-    # Use quaternions?
-    basis: []
+    basis: [] #[use quaternions] (THIS IS NOT YET IMPLEMENTED)
 
 
-
+# Define all important settings for the hand
 hand:
   num_channels: 4
 
+  # Pressures to use (may later be replaced with separate "hand" setup files instead)
   idle_pressure:  [-1,-1,-1,-1,0,0,0]  #[psi]
   grasp_pressure: [13,13,13,13,0,0,0] #[psi]
 
+  # Timing
   grasp_time: 1.0    #[sec]
   wait_after_grasp: 1.0    #[sec]
 
