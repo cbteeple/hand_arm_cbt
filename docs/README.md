@@ -1,7 +1,6 @@
 ---
 layout: default
 title: Hand Arm ROS Package
-has_toc: false
 ---
 
 
