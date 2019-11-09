@@ -1,9 +1,3 @@
----
-layout: default
-title: Hand Arm ROS Package
----
-
-
 # hand_arm_cbt
 A top-level package to coordinate a robot with a soft pneumatic hand.
 
