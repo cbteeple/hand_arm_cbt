@@ -48,7 +48,6 @@ filepath_config = os.path.join(curr_path,'..','config')
 save_data_folder = 'Documents/data'
 
 
-Fake = False
 
 
 
@@ -60,6 +59,7 @@ class pickPlace:
         self.num_reps = rospy.get_param(rospy.get_name()+'/num_reps',1)
         self.replan = rospy.get_param(rospy.get_name()+'/replan',False)
         self.starting_index = rospy.get_param(rospy.get_name()+'/start',0)
+        self.fake = rospy.get_param(rospy.get_name()+'/fake',False)
 
         self.use_arm = rospy.get_param(rospy.get_name()+'/use_arm',True)
         self.use_hand = rospy.get_param(rospy.get_name()+'/use_hand',True)
@@ -283,7 +283,7 @@ class pickPlace:
                 out['hand'] = None
                 if movement['arm'] is not None:
                     if self.use_arm:
-                        out['arm'] = movement['arm']
+                        out['arm'] = self.arm_sender.build_traj(movement['arm'])
                     else:
                         out['arm'] = None
                 if movement['hand'] is not None:
@@ -303,7 +303,7 @@ class pickPlace:
                 self.hand_sender.execute_traj(plan['hand'], blocking=False)
 
             if (plan['arm'] is not None) and (self.use_arm):
-                if not Fake:
+                if not self.fake:
                     self.arm_sender.execute_traj(plan['arm'], blocking=False)
                 else:
                     self.arm_sender.display_trajectory(plan['arm'])

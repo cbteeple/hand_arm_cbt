@@ -43,7 +43,7 @@ curr_path=os.path.dirname(os.path.abspath(__file__))
 filepath_traj = os.path.join(curr_path,'..','trajectories')
 filepath_config = os.path.join(curr_path,'..','config')
 
-Fake = False
+
 
 
 
@@ -57,6 +57,7 @@ class pickPlace:
 
         self.use_arm = rospy.get_param(rospy.get_name()+'/use_arm',True)
         self.use_hand = rospy.get_param(rospy.get_name()+'/use_hand',True)
+        self.fake = rospy.get_param(rospy.get_name()+'/fake',False)
 
         
 
@@ -197,7 +198,7 @@ class pickPlace:
                     self.hand_sender.execute_traj(plan['hand'], blocking=False)
 
                 if (plan['arm'] is not None) and (self.use_arm):
-                    if not Fake:
+                    if not self.fake:
                         self.arm_sender.execute_traj(plan['arm'], blocking=False)
                     else:
                         self.arm_sender.display_trajectory(plan['arm'])

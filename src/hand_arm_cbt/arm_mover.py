@@ -94,22 +94,41 @@ class trajSender:
 
 
     def build_traj(self, arm_trajIn = None):
-        joint_states = rospy.wait_for_message("joint_states", JointState)
-        joints_pos = joint_states.position
+
+        if type(arm_trajIn) is type(self.goal_blank):
+            goal= arm_trajIn
+
+            waypoints = arm_trajIn.trajectory.points
+
+            for idx, waypoint in enumerate(waypoints):
+                waypoint.time_from_start = waypoint.time_from_start*self.speed_multiplier
+
+                vels=[]
+                for vel in waypoint.velocities:
+                    vels.append(vel/self.speed_multiplier)
+
+                waypoint.velocities = tuple(vels)
 
 
-        goal = copy.deepcopy(self.goal_blank)
 
-        goal.trajectory.points= []
-        time_offset = arm_trajIn[0]['time']
+        else:
+
+            joint_states = rospy.wait_for_message("joint_states", JointState)
+            joints_pos = joint_states.position
 
 
-        for point in arm_trajIn:
-            curr_pt = JointTrajectoryPoint(positions=point['joints_pos'], velocities=point['joints_vel'], time_from_start=rospy.Duration((point['time']-time_offset)*self.speed_multiplier))
+            goal = copy.deepcopy(self.goal_blank)
+
+            goal.trajectory.points= []
+            time_offset = arm_trajIn[0]['time']
+
+
+            for point in arm_trajIn:
+                curr_pt = JointTrajectoryPoint(positions=point['joints_pos'], velocities=point['joints_vel'], time_from_start=rospy.Duration((point['time']-time_offset)*self.speed_multiplier))
+                goal.trajectory.points.append(curr_pt)
+
+            curr_pt = JointTrajectoryPoint(positions=arm_trajIn[-1]['joints_pos'], velocities=arm_trajIn[-1]['joints_vel'], time_from_start=rospy.Duration((arm_trajIn[-1]['time']-time_offset+0.25)*self.speed_multiplier))
             goal.trajectory.points.append(curr_pt)
-
-        curr_pt = JointTrajectoryPoint(positions=arm_trajIn[-1]['joints_pos'], velocities=arm_trajIn[-1]['joints_vel'], time_from_start=rospy.Duration((arm_trajIn[-1]['time']-time_offset+0.25)*self.speed_multiplier))
-        goal.trajectory.points.append(curr_pt)
 
         return goal
 

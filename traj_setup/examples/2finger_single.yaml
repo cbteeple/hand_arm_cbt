@@ -49,7 +49,7 @@ hand:
 
   # Timing
   grasp_time: 1.0    #[sec]
-  wait_after_grasp: 1.0    #[sec]
+  wait_after_grasp: 5.0    #[sec]
 
   release_time: 0.1  #[sec]
-  wait_after_release: 1.0    #[sec]
+  wait_after_release: 5.0    #[sec]
