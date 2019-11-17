@@ -1,0 +1,7 @@
+remote_theme: pmarsceill/just-the-docs
+#logo: "/assets/images/just-the-docs.png"
+logo: "https://clarkteeple.weebly.com/uploads/7/8/9/5/78958290/bauhaus-wide.png"
+# Aux links for the upper right navigation
+aux_links:
+  "Source on GitHub":
+    - "//github.com/cbteeple/hand_arm_cbt"
