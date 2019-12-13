@@ -100,6 +100,7 @@ class pickPlaceBuild:
         self.prep_directory(self.filepath_out_dir)
 
         if self.pattern_type == 'grid':
+            shift_release_pose = self.config['arm']['grid'].get('affects_release_pose',True)
 
             for entry in self.perturbations:
                 
@@ -109,8 +110,9 @@ class pickPlaceBuild:
                 for idx, axis in enumerate(curr_config['arm']['grasp_pose']['position']):
                     curr_config['arm']['grasp_pose']['position'][idx] = axis + entry[idx]
 
-                for idx, axis in enumerate(curr_config['arm']['release_pose']['position']):
-                    curr_config['arm']['release_pose']['position'][idx] = axis + entry[idx]
+                if shift_release_pose:
+                    for idx, axis in enumerate(curr_config['arm']['release_pose']['position']):
+                        curr_config['arm']['release_pose']['position'][idx] = axis + entry[idx]
 
                 self.build_moves(curr_config)
 
@@ -213,29 +215,74 @@ class pickPlaceBuild:
 
         arm_moves = {}
 
-        pickup_height = config['arm']['pickup_height']
+        pickup = config['arm'].get('pickup', None)
 
-        above_grasp = copy.deepcopy(config['arm']['grasp_pose'])
-        above_grasp['position'][2] = above_grasp['position'][2] + pickup_height
+        if pickup is None:
+            pickup = {}
+            pickup['height']  = config['arm']['pickup_height']
+            pickup['type']    = config['arm']['pickup_type']
+            pickup['percent'] = config['arm']['pickup_percent']
 
-        above_release = copy.deepcopy(config['arm']['release_pose'])
-        above_release['position'][2] = above_release['position'][2] + pickup_height
+        if not self.validate_pickup(pickup):
+            return
+        
 
+        if pickup['type'] == 'square':
+            above_grasp = copy.deepcopy(config['arm']['grasp_pose'])
+            above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
+
+            above_release = copy.deepcopy(config['arm']['release_pose'])
+            above_release['position'][2] = above_release['position'][2] + pickup['height']
+
+            arm_moves['move'] = [copy.deepcopy(config['arm']['grasp_pose']),
+                                above_grasp,
+                                above_release,
+                                copy.deepcopy(config['arm']['release_pose']) ]
+
+        elif pickup['type'] == 'triangle':
+            above_grasp = copy.deepcopy(config['arm']['grasp_pose'])
+            above_release = copy.deepcopy(config['arm']['release_pose'])
+            for axis_idx, item in enumerate(above_grasp['position']):
+                above_grasp['position'][axis_idx] = ((1-pickup['percent'])*above_grasp['position'][axis_idx] + (pickup['percent'])*above_release['position'][axis_idx])
+
+            above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
+
+            arm_moves['move'] = [copy.deepcopy(config['arm']['grasp_pose']),
+                                above_grasp,
+                                copy.deepcopy(config['arm']['release_pose']) ]
+
+        else:
+            print('Pickup type not implemented yet: Doing square instead')
+
+            above_grasp = copy.deepcopy(config['arm']['grasp_pose'])
+            above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
+
+            above_release = copy.deepcopy(config['arm']['release_pose'])
+            above_release['position'][2] = above_release['position'][2] + pickup['height']
+
+            arm_moves['move'] = [copy.deepcopy(config['arm']['grasp_pose']),
+                                above_grasp,
+                                above_release,
+                                copy.deepcopy(config['arm']['release_pose']) ]
 
 
         arm_moves['pre'] = [copy.deepcopy(config['arm']['initial_pose']),
                             copy.deepcopy(config['arm']['grasp_pose'])   ]
-
-        arm_moves['move'] = [copy.deepcopy(config['arm']['grasp_pose']),
-                            above_grasp,
-                            above_release,
-                            copy.deepcopy(config['arm']['release_pose']) ]
 
         arm_moves['post'] = [copy.deepcopy(config['arm']['release_pose']),
                             copy.deepcopy(config['arm']['final_pose'])   ]
 
         self.trajectory_built['arm'] = arm_moves
 
+
+    def validate_pickup(self, pickup):
+        ok=True
+
+        if pickup['percent'] >1 or pickup['percent'] <0:
+            ok = False
+
+        return ok
+        
    
 
 
