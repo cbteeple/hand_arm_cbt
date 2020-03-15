@@ -7,13 +7,16 @@
 <arg name="debug" default="False" doc="Whether debug is on" />
 <arg name="speed_factor" default="1.0" doc="the speed to run the trajectory at" />
 <arg name="reps" default="1" doc="The number of reps" />
-<arg name="replan" default="false" doc="The number of reps" />
-<arg name="start" default="0" doc="The number of reps" />
+<arg name="replan" default="false" doc="decide whether to re-plan the trajectories on the fly" />
+<arg name="start" default="0" doc="Where to start" />
 
 <arg name="arm" default="true" doc="Use the arm" />
 <arg name="hand" default="true" doc="Use the hand" />
 <arg name="save" default="true" doc="Save data" />
 <arg name="fake" default="false" doc="Save data" />
+
+<arg name="id" default="" doc="Some output ID that will be appended to the data filename" />
+
 
 
 <!-- start the run node and pass it all of the parameters -->
@@ -28,6 +31,7 @@
       	<param name="use_hand" type="bool" value="$(arg hand)" />
       	<param name="save_data" type="bool" value="$(arg save)" />
       	<param name="fake" type="bool" value="$(arg fake)" />
+        <param name="out_id" type="str" value="$(arg id)" />
     </node>
 
 </launch>

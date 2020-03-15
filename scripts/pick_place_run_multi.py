@@ -60,9 +60,11 @@ class pickPlace:
         self.replan = rospy.get_param(rospy.get_name()+'/replan',False)
         self.starting_index = rospy.get_param(rospy.get_name()+'/start',0)
         self.fake = rospy.get_param(rospy.get_name()+'/fake',False)
+        self.out_id = rospy.get_param(rospy.get_name()+'/out_id',"")
 
         self.use_arm = rospy.get_param(rospy.get_name()+'/use_arm',True)
         self.use_hand = rospy.get_param(rospy.get_name()+'/use_hand',True)
+        self.use_checklist = rospy.get_param(rospy.get_name()+'/use_checklist',True)
         self.save_data = rospy.get_param(rospy.get_name()+'/save_data',False)
         self.curr_file = None
         self.curr_rep  = None
@@ -127,6 +129,16 @@ class pickPlace:
             self.createOutFolder(self.traj_profile)
 
 
+        # create the checklist topic
+        if self.use_checklist:
+            if self.save_folder_curr is None:
+                self.createOutFolder(self.traj_profile)
+
+            self.createSuccessFile('success')
+            self.checklist_pub = rospy.Publisher('/trial_success', TrialSuccess, queue_size=10)
+            
+
+
         
 
     def start_saving(self):
@@ -134,6 +146,9 @@ class pickPlace:
 
         # generate the topic list
         topic_list = []
+        if self.use_checklist:
+            topic_list.extend(['/trial_success'])
+
         if self.use_arm:
             topic_list.extend(['/joint_states','/wrench','/tool_velocity'])
         if self.use_hand:
@@ -159,7 +174,7 @@ class pickPlace:
 
     def createOutFolder(self,filename):
         now = datetime.now()
-        self.save_folder_curr = filename + "_" + now.strftime("%m%d%Y_%H%M%S")
+        self.save_folder_curr = filename+'_'+ self.out_id + "_" + now.strftime("%Y%m%d_%H%M%S")
 
         dirname = os.path.abspath(os.path.join(os.path.expanduser('~'),self.save_data_folder,self.save_folder_curr))
         if not os.path.exists(dirname):
@@ -171,19 +186,37 @@ class pickPlace:
     def createOutFile(self,filename=None):
 
         if not filename:
-            print(self.curr_file)
-            print(self.curr_rep)
+            #print(self.curr_file)
+            #print(self.curr_rep)
             if (self.curr_file is None) or (self.curr_rep is None):
                 return None
 
             filename = '%s_rep%04d'%(self.curr_file.replace('.traj',''),self.curr_rep)
 
         outFile=os.path.abspath(os.path.join(os.path.expanduser('~'),self.save_data_folder,self.save_folder_curr,filename))
-        print(outFile)
+        #print(outFile)
 
         return "%s.bag" % (outFile)
 
 
+
+    def createSuccessFile(self,filename=None):
+
+        if not filename:
+            #print(self.curr_file)
+            #print(self.curr_rep)
+            if (self.curr_file is None) or (self.curr_rep is None):
+                return None
+
+            filename = '%s_rep%04d'%(self.curr_file.replace('.traj',''),self.curr_rep)
+
+        outFile=os.path.abspath(os.path.join(os.path.expanduser('~'),self.save_data_folder,self.save_folder_curr,filename))
+        #print(outFile)
+
+        self.success_filename = "%s.suc" % (outFile)
+
+        with open(self.success_filename,'w') as f:
+            f.write("Trial Name\tRep\tSuccess");
 
 
 
@@ -320,7 +353,7 @@ class pickPlace:
             self.curr_rep=idx
             print('REP: %d'%(idx))
             if wait_before_each:
-                inp = raw_input("Execute Action? (Press ENTER)")
+                inp = raw_input("Start? (Press ENTER)")
 
             if self.save_data:
                 self.out_filename=self.createOutFile()
@@ -328,9 +361,36 @@ class pickPlace:
 
             self.excecute_sequence()
 
+            
             if self.save_data:
                 self.stop_saving()
+
+            # get user input about the success or failure of the trial
+            if self.use_checklist:
+                inp=""
+                while (inp!='y' and inp!='n'):
+                    inp = raw_input("Was the trial successful? (y/n) ")
+
+                self.mark_success(inp)
+
             self.go_to_start()
+
+
+
+    def mark_success(self,success):
+        
+        if success =='y':
+            out = 1
+            print("Success Recorded")
+        else:
+            out = 0
+            print("Failure Recorded")
+
+        out_str =self.curr_file
+        out_str +='\t'+"%d"%(self.curr_rep) 
+        out_str+='\t'+"%d\n"%(out)
+        with open(self.success_filename,'a') as f:
+            f.write(out_str)
 
 
     def shutdown(self, hard=False):
