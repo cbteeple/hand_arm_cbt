@@ -12,7 +12,7 @@
 
 <arg name="arm" default="true" doc="Use the arm" />
 <arg name="hand" default="true" doc="Use the hand" />
-<arg name="save" default="false" doc="Save data" />
+<arg name="save" default="true" doc="Save data" />
 <arg name="fake" default="false" doc="Save data" />
 
 
