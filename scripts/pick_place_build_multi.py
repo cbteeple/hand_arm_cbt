@@ -107,8 +107,14 @@ class pickPlaceBuild:
                 # Update with current perturbation
                 curr_config = copy.deepcopy(base_config)
 
-                for idx, axis in enumerate(curr_config['arm']['grasp_pose']['position']):
-                    curr_config['arm']['grasp_pose']['position'][idx] = axis + entry[idx]
+                if isinstance(curr_config['arm']['grasp_pose'], list):
+                    for row_idx, row in enumerate(curr_config['arm']['grasp_pose']):
+                        for axis_idx, axis in enumerate(row['position']):
+                            curr_config['arm']['grasp_pose'][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
+
+                else:
+                    for idx, axis in enumerate(curr_config['arm']['grasp_pose']['position']):
+                        curr_config['arm']['grasp_pose']['position'][idx] = axis + entry[idx]
 
                 if shift_release_pose:
                     for idx, axis in enumerate(curr_config['arm']['release_pose']['position']):
@@ -169,10 +175,18 @@ class pickPlaceBuild:
         ops = sequence['operations']
 
         ops.append({'arm': 'pre', 'hand': 'startup'})
-        ops.append({'arm': False, 'hand': 'grasp'})
+
+        if self.config['hand'].get('grasp_start','after') == "during":
+            ops.append({'arm': 'grasp_move', 'hand': 'grasp'})
+        else:
+            ops.append({'arm': 'grasp_move', 'hand': False})
+            ops.append({'arm': False, 'hand': 'grasp'})
+        
         ops.append({'arm': 'move', 'hand': False})
         ops.append({'arm': False, 'hand': 'release'})
         ops.append({'arm': 'post', 'hand': False})
+
+
 
 
         self.trajectory_built['sequence'] = sequence
@@ -187,14 +201,34 @@ class pickPlaceBuild:
         idle  = [ float(x) for x in self.config['hand']['idle_pressure'] ]
 
         grasp = [ float(x) for x in self.config['hand']['grasp_pressure'] ]
-        
-        hand_moves['grasp']= [self.build_pressure_vec(idle, 0.0), 
-                              self.build_pressure_vec(grasp, self.config['hand']['grasp_time']), 
-                              self.build_pressure_vec(grasp, self.config['hand']['grasp_time'] + self.config['hand']['wait_after_grasp'])]
 
-        hand_moves['release'] = [self.build_pressure_vec(grasp, 0.0), 
-                                 self.build_pressure_vec(idle, self.config['hand']['release_time']), 
-                                 self.build_pressure_vec(idle, self.config['hand']['release_time'] + self.config['hand']['wait_after_release'])]
+
+        wait_before = self.config['hand'].get('wait_before_grasp',0.0)
+        grasp_duration = self.config['hand'].get('grasp_time',0.0)
+        wait_after  = self.config['hand'].get('wait_after_grasp',0.0)
+
+        hand_moves['grasp']= [self.build_pressure_vec(idle, 0.0), 
+                                  self.build_pressure_vec(idle, wait_before)]
+
+        if self.config['hand'].get('grasp_sequence',False):
+            grasp_duration = self.config['hand']['grasp_sequence'][-1]['time']
+
+            for row in self.config['hand']['grasp_sequence']:
+                hand_moves['grasp'].append(self.build_pressure_vec(self.config['hand'][row['pressure']], wait_before+row['time']))
+            
+        else:
+            hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration))
+
+        hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration+wait_after))
+
+        wait_before = self.config['hand'].get('wait_before_release',0.0)
+        grasp_duration = self.config['hand'].get('release_time',0.0)
+        wait_after  = self.config['hand'].get('wait_after_release',0.0)
+
+        hand_moves['release']= [self.build_pressure_vec(grasp, 0.0), 
+                                self.build_pressure_vec(grasp, wait_before),
+                                self.build_pressure_vec(idle, wait_before+grasp_duration), 
+                                self.build_pressure_vec(idle, wait_before+grasp_duration+wait_after)]
 
         hand_moves['startup'] = [self.build_pressure_vec(idle, 0.0), 
                                  self.build_pressure_vec(idle, 0.0)]
@@ -215,6 +249,29 @@ class pickPlaceBuild:
 
         arm_moves = {}
 
+        # Build the grasp move.
+        # If the object is a list, then use all the entries
+        if isinstance(config['arm']['grasp_pose'], list):
+            arm_moves['pre'] = [copy.deepcopy(config['arm']['initial_pose']),
+                                copy.deepcopy(config['arm']['grasp_pose'][0])   ]
+
+            grasp_end_pose = copy.deepcopy(config['arm']['grasp_pose'][-1])
+
+            arm_moves['grasp_move'] = []
+            for row in config['arm']['grasp_pose']:
+                arm_moves['grasp_move'].append(copy.deepcopy(row))
+
+        else:
+            arm_moves['pre'] = [copy.deepcopy(config['arm']['initial_pose']),
+                                copy.deepcopy(config['arm']['grasp_pose'])   ]
+
+            arm_moves['grasp_move'] = [copy.deepcopy(config['arm']['grasp_pose']),
+                                       copy.deepcopy(config['arm']['grasp_pose']) ]
+
+            grasp_end_pose = copy.deepcopy(config['arm']['grasp_pose'])
+
+
+        # Build the pickup/release move
         pickup = config['arm'].get('pickup', None)
 
         if pickup is None:
@@ -226,49 +283,46 @@ class pickPlaceBuild:
         if not self.validate_pickup(pickup):
             return
         
-
         if pickup['type'] == 'square':
-            above_grasp = copy.deepcopy(config['arm']['grasp_pose'])
+            above_grasp = copy.deepcopy(grasp_end_pose)
             above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
 
             above_release = copy.deepcopy(config['arm']['release_pose'])
             above_release['position'][2] = above_release['position'][2] + pickup['height']
 
-            arm_moves['move'] = [copy.deepcopy(config['arm']['grasp_pose']),
+            arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
                                 above_grasp,
                                 above_release,
                                 copy.deepcopy(config['arm']['release_pose']) ]
 
         elif pickup['type'] == 'triangle':
-            above_grasp = copy.deepcopy(config['arm']['grasp_pose'])
+            above_grasp = copy.deepcopy(grasp_end_pose)
             above_release = copy.deepcopy(config['arm']['release_pose'])
             for axis_idx, item in enumerate(above_grasp['position']):
                 above_grasp['position'][axis_idx] = ((1-pickup['percent'])*above_grasp['position'][axis_idx] + (pickup['percent'])*above_release['position'][axis_idx])
 
             above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
 
-            arm_moves['move'] = [copy.deepcopy(config['arm']['grasp_pose']),
+            arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
                                 above_grasp,
                                 copy.deepcopy(config['arm']['release_pose']) ]
 
         else:
             print('Pickup type not implemented yet: Doing square instead')
 
-            above_grasp = copy.deepcopy(config['arm']['grasp_pose'])
+            above_grasp = copy.deepcopy(grasp_end_pose)
             above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
 
             above_release = copy.deepcopy(config['arm']['release_pose'])
             above_release['position'][2] = above_release['position'][2] + pickup['height']
 
-            arm_moves['move'] = [copy.deepcopy(config['arm']['grasp_pose']),
+            arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
                                 above_grasp,
                                 above_release,
                                 copy.deepcopy(config['arm']['release_pose']) ]
+   
 
-
-        arm_moves['pre'] = [copy.deepcopy(config['arm']['initial_pose']),
-                            copy.deepcopy(config['arm']['grasp_pose'])   ]
-
+        # Build the post-release move.
         arm_moves['post'] = [copy.deepcopy(config['arm']['release_pose']),
                             copy.deepcopy(config['arm']['final_pose'])   ]
 
