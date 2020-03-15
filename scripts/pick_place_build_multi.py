@@ -202,13 +202,14 @@ class pickPlaceBuild:
 
         grasp = [ float(x) for x in self.config['hand']['grasp_pressure'] ]
 
+        initial = [ float(x) for x in self.config['hand'].get('initial_pressure',idle) ]
+
 
         wait_before = self.config['hand'].get('wait_before_grasp',0.0)
         grasp_duration = self.config['hand'].get('grasp_time',0.0)
         wait_after  = self.config['hand'].get('wait_after_grasp',0.0)
 
-        hand_moves['grasp']= [self.build_pressure_vec(idle, 0.0), 
-                                  self.build_pressure_vec(idle, wait_before)]
+        hand_moves['grasp']= [self.build_pressure_vec(initial, 0.0)]
 
         if self.config['hand'].get('grasp_sequence',False):
             grasp_duration = self.config['hand']['grasp_sequence'][-1]['time']
@@ -217,6 +218,7 @@ class pickPlaceBuild:
                 hand_moves['grasp'].append(self.build_pressure_vec(self.config['hand'][row['pressure']], wait_before+row['time']))
             
         else:
+            hand_moves['grasp'].append(self.build_pressure_vec(initial, wait_before))
             hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration))
 
         hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration+wait_after))
@@ -230,8 +232,8 @@ class pickPlaceBuild:
                                 self.build_pressure_vec(idle, wait_before+grasp_duration), 
                                 self.build_pressure_vec(idle, wait_before+grasp_duration+wait_after)]
 
-        hand_moves['startup'] = [self.build_pressure_vec(idle, 0.0), 
-                                 self.build_pressure_vec(idle, 0.0)]
+        hand_moves['startup'] = [self.build_pressure_vec(initial, 0.0), 
+                                 self.build_pressure_vec(initial, 0.0)]
 
 
         self.trajectory_built['hand'] = hand_moves
