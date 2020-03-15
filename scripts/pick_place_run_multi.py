@@ -216,7 +216,7 @@ class pickPlace:
         self.success_filename = "%s.suc" % (outFile)
 
         with open(self.success_filename,'w') as f:
-            f.write("Trial Name\tRep\tSuccess");
+            f.write("Trial Name,Rep,Success"+'\n');
 
 
 
@@ -386,9 +386,7 @@ class pickPlace:
             out = 0
             print("Failure Recorded")
 
-        out_str =self.curr_file
-        out_str +='\t'+"%d"%(self.curr_rep) 
-        out_str+='\t'+"%d\n"%(out)
+        out_str ="%s,%d,%d\n"%(self.curr_file.replace('.traj',''), self.curr_rep, out)
         with open(self.success_filename,'a') as f:
             f.write(out_str)
 
