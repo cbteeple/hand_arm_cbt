@@ -2,7 +2,7 @@
 <launch>
 
 
-<!-- get the arguments from  -->
+<!-- get the arguments from the user -->
 <arg name="traj" doc="Configuration profile to use" />
 <arg name="debug" default="False" doc="Whether debug is on" />
 <arg name="speed_factor" default="1.0" doc="the speed to run the trajectory at" />
@@ -16,8 +16,7 @@
 <arg name="fake" default="false" doc="Save data" />
 
 
-<!-- Load controller settings -->
-
+<!-- start the run node and pass it all of the parameters -->
     <node name="pick_and_place_node" pkg="hand_arm" type="pick_place_run_multi.py" respawn="false"
     	output="screen">
       	<param name="traj_profile" type="str" value="$(arg traj)" />
@@ -30,19 +29,5 @@
       	<param name="save_data" type="bool" value="$(arg save)" />
       	<param name="fake" type="bool" value="$(arg fake)" />
     </node>
-
-
-    <!--
-    <node name="recorder_server" pkg="rosbag_recorder"
-    	  type="rosbag_recorder_server.py" respawn="false"
-    	  output="screen"
-    	  if="$(eval save)">
-    	<remap from="record_topics" to="rosbag_recorder/record_topics" />
-		<remap from="stop_recording" to="rosbag_recorder/stop_recording" />
-		<param name="pickle_on_complete" type="bool" value="true" />
-    </node>
-	-->
-
-
 
 </launch>
