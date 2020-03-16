@@ -367,9 +367,9 @@ class pickPlace:
 
             # get user input about the success or failure of the trial
             if self.use_checklist:
-                inp=""
-                while (inp!='y' and inp!='n'):
-                    inp = raw_input("Was the trial successful? (y/n) ")
+                inp=None
+                while (type(inp) != int):
+                    inp = input("Was the trial successful? (0,1,2...9) ")
 
                 self.mark_success(inp)
 
@@ -379,13 +379,8 @@ class pickPlace:
 
     def mark_success(self,success):
         
-        if success =='y':
-            out = 1
-            print("Success Recorded")
-        else:
-            out = 0
-            print("Failure Recorded")
-
+        print("Trial Marked: %d"%(success))
+        out = success
         out_str ="%s,%d,%d\n"%(self.curr_file.replace('.traj',''), self.curr_rep, out)
         with open(self.success_filename,'a') as f:
             f.write(out_str)
