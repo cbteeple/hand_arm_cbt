@@ -45,7 +45,9 @@ curr_path=os.path.dirname(os.path.abspath(__file__))
 filepath_traj = os.path.join(curr_path,'..','trajectories')
 filepath_config = os.path.join(curr_path,'..','config')
 
-save_data_folder = 'Documents/data'
+#save_data_folder = 'Documents/data'
+
+save_data_folder = '/media/armando/LaCie/entanglement_data/data'
 
 
 
