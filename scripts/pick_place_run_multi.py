@@ -27,6 +27,7 @@ import yaml
 import pickle
 import os
 import sys
+import errno
 import matplotlib.pyplot as plt
 from datetime import datetime
 
@@ -154,26 +155,32 @@ class pickPlace:
             if not os.path.exists(data_folder_out):
                 try:
                     os.makedirs(data_folder_out)
+                    directory_exists = True
                 except OSError as e:
                     if e.errno != errno.EEXIST:
                         directory_exists = False
-                print(directory_exists)
 
         if not directory_exists:
-            print('Save directory did not exist. Trying default save directory')
+            print('SAVE SETUP: Save directory did not exist. Trying default save directory')
             data_folder_out = save_config.get('save_folder_default',None)
             if data_folder_out is not None:
                 if not os.path.exists(data_folder_out):
                     try:
                         os.makedirs(data_folder_out)
+                        directory_exists = True
                     except OSError as e:
                         if e.errno != errno.EEXIST:
                             directory_exists = False
-                    print(directory_exists)
+            
+                else:
+                    directory_exists = True
 
         
         if not directory_exists:
-            raise('Please use an existing data directory in save_config.yaml')
+            print('ERROR: Please use an existing data directory in save_config.yaml')
+            raise
+        else:
+            print('SAVE SETUP: Saving in: %s'%(data_folder_out))
         
         return(data_folder_out)
         
