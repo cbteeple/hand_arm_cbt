@@ -45,10 +45,9 @@ curr_path=os.path.dirname(os.path.abspath(__file__))
 filepath_traj = os.path.join(curr_path,'..','trajectories')
 filepath_config = os.path.join(curr_path,'..','config')
 
-save_data_folder = 'Documents/data'
+#save_data_folder = 'Documents/data'
 
-
-
+save_data_folder = '/media/armando/LaCie/robot_data'
 
 
 
@@ -74,8 +73,10 @@ class pickPlace:
         # Read the trajectory configuration file
         self.filepath = os.path.join(filepath_traj)
         self.filepath =   os.path.join(self.filepath,self.traj_profile)
-        self.save_data_folder = save_data_folder
+        self.save_data_folder = self.get_save_locations(os.path.join(filepath_config,'save_config.yaml'))
         self.save_folder_curr = None
+
+        
 
         self.in_files = [f for f in os.listdir(self.filepath) if (os.path.isfile(os.path.join(self.filepath, f)) and f.endswith(".traj"))]
 
@@ -139,6 +140,42 @@ class pickPlace:
             
 
 
+    def get_save_locations(self, config_filename):
+        # Get save locations
+        with open(config_filename,'r') as f:
+            # use safe_load instead of load
+            save_config = yaml.safe_load(f)
+        
+        # Try the user-specified directory
+        data_folder_out = save_config.get('save_folder',None)
+        directory_exists = True
+
+        if data_folder_out is not None:
+            if not os.path.exists(data_folder_out):
+                try:
+                    os.makedirs(data_folder_out)
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        directory_exists = False
+                print(directory_exists)
+
+        if not directory_exists:
+            print('Save directory did not exist. Trying default save directory')
+            data_folder_out = save_config.get('save_folder_default',None)
+            if data_folder_out is not None:
+                if not os.path.exists(data_folder_out):
+                    try:
+                        os.makedirs(data_folder_out)
+                    except OSError as e:
+                        if e.errno != errno.EEXIST:
+                            directory_exists = False
+                    print(directory_exists)
+
+        
+        if not directory_exists:
+            raise('Please use an existing data directory in save_config.yaml')
+        
+        return(data_folder_out)
         
 
     def start_saving(self):
@@ -223,33 +260,33 @@ class pickPlace:
 
     def run_multiple(self):
 
-        try:
+        #try:
 
-            for file in self.in_files:
-                self.curr_file = file
-                print('\n'+file)
-                config_file =   os.path.join(self.filepath,file)
+        for file in self.in_files:
+            self.curr_file = file
+            print('\n'+file)
+            config_file =   os.path.join(self.filepath,file)
 
-                with open(config_file,'r') as f:
-                    self.traj_config = pickle.load(f)
-                    self.operations = self.traj_config['sequence']
-                    f.close()
+            with open(config_file,'r') as f:
+                self.traj_config = pickle.load(f)
+                self.operations = self.traj_config['sequence']
+                f.close()
 
-                    self.get_sequence()
+                self.get_sequence()
 
-                    # Go to the start
-                    #inp = raw_input("Move to Starting Position? (Press ENTER)")
-                    self.go_to_start()
-                    self.plan_sequence()
+                # Go to the start
+                #inp = raw_input("Move to Starting Position? (Press ENTER)")
+                self.go_to_start()
+                self.plan_sequence()
 
-                    # Excecute the trajectory the desired number of times
-                    self.rep_sequence(wait_before_each = False)
+                # Excecute the trajectory the desired number of times
+                self.rep_sequence(wait_before_each = False)
                 
 
-        except KeyboardInterrupt:
-            rospy.signal_shutdown("KeyboardInterrupt")
-            self.shutdown()
-            raise
+        #except KeyboardInterrupt:
+        #    self.shutdown()
+        #    rospy.signal_shutdown("KeyboardInterrupt")
+        #    raise
 
 
 
@@ -367,9 +404,9 @@ class pickPlace:
 
             # get user input about the success or failure of the trial
             if self.use_checklist:
-                inp=""
-                while (inp!='y' and inp!='n'):
-                    inp = raw_input("Was the trial successful? (y/n) ")
+                inp=None
+                while (type(inp) != int):
+                    inp = input("Was the trial successful? (0,1,2...9) ")
 
                 self.mark_success(inp)
 
@@ -379,13 +416,8 @@ class pickPlace:
 
     def mark_success(self,success):
         
-        if success =='y':
-            out = 1
-            print("Success Recorded")
-        else:
-            out = 0
-            print("Failure Recorded")
-
+        print("Trial Marked: %d"%(success))
+        out = success
         out_str ="%s,%d,%d\n"%(self.curr_file.replace('.traj',''), self.curr_rep, out)
         with open(self.success_filename,'a') as f:
             f.write(out_str)
@@ -394,13 +426,18 @@ class pickPlace:
     def shutdown(self, hard=False):
         if self.save_data:
             self.stop_saving()
+            print('-Stopped data logger')
 
         if self.use_hand:
-            self.hand_sender.shutdown()
+            print('Stopping hand controller')
+            self.hand_sender.shutdown(reset_pressures='resting')
+            #self.hand_sender.shutdown(reset_pressures=[2,0])
+            print('-Stopped hand controller')
 
         if hard:
             if self.use_arm:
                 self.arm_sender.shutdown()
+                print('-Stopped arm controller (hard)')
 
    
 
@@ -411,9 +448,11 @@ def main(file_name=None):
 
         node = pickPlace()
         node.run_multiple()
-        
 
     except KeyboardInterrupt:
+        print("Shutting Down Top-Level Node")
+        node.shutdown()
+        print("Shutting Down ROS")
         rospy.signal_shutdown("KeyboardInterrupt")
         raise
 
