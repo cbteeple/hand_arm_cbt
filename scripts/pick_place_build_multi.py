@@ -183,7 +183,17 @@ class pickPlaceBuild:
             ops.append({'arm': False, 'hand': 'grasp'})
         
         ops.append({'arm': 'move', 'hand': False})
-        ops.append({'arm': False, 'hand': 'release'})
+
+        release_when = self.config['hand'].get('release_start','after')
+        if release_when == "during":
+            ops.append({'arm': 'release_move', 'hand': 'release'})
+        elif release_when == "before":
+            ops.append({'arm': False, 'hand': 'release'})
+            ops.append({'arm': 'release_move', 'hand': False})
+        else: #release after by default
+            ops.append({'arm': 'release_move', 'hand': False})
+            ops.append({'arm': False, 'hand': 'release'})
+
         ops.append({'arm': 'post', 'hand': False})
 
 
@@ -274,6 +284,23 @@ class pickPlaceBuild:
 
 
         # Build the pickup/release move
+        if isinstance(config['arm']['release_pose'], list):
+            arm_moves['release_move'] = []
+            for row in config['arm']['release_pose']:
+                arm_moves['release_move'].append(copy.deepcopy(row))
+            
+            release_start = copy.deepcopy(config['arm']['release_pose'][0])
+            release_end = copy.deepcopy(config['arm']['release_pose'][-1])
+        else:
+            arm_moves['release_move'] = [copy.deepcopy(config['arm']['release_pose']),
+                                       copy.deepcopy(config['arm']['release_pose']) ]
+            
+            release_start = copy.deepcopy(config['arm']['release_pose'])
+            release_end = copy.deepcopy(config['arm']['release_pose'])
+
+
+
+
         pickup = config['arm'].get('pickup', None)
 
         if pickup is None:
@@ -289,17 +316,17 @@ class pickPlaceBuild:
             above_grasp = copy.deepcopy(grasp_end_pose)
             above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
 
-            above_release = copy.deepcopy(config['arm']['release_pose'])
+            above_release = copy.deepcopy(release_start)
             above_release['position'][2] = above_release['position'][2] + pickup['height']
 
             arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
                                 above_grasp,
                                 above_release,
-                                copy.deepcopy(config['arm']['release_pose']) ]
+                                release_start]
 
         elif pickup['type'] == 'triangle':
             above_grasp = copy.deepcopy(grasp_end_pose)
-            above_release = copy.deepcopy(config['arm']['release_pose'])
+            above_release = copy.deepcopy(release_start)
             for axis_idx, item in enumerate(above_grasp['position']):
                 above_grasp['position'][axis_idx] = ((1-pickup['percent'])*above_grasp['position'][axis_idx] + (pickup['percent'])*above_release['position'][axis_idx])
 
@@ -307,7 +334,7 @@ class pickPlaceBuild:
 
             arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
                                 above_grasp,
-                                copy.deepcopy(config['arm']['release_pose']) ]
+                                release_start ]
 
         else:
             print('Pickup type not implemented yet: Doing square instead')
@@ -315,17 +342,17 @@ class pickPlaceBuild:
             above_grasp = copy.deepcopy(grasp_end_pose)
             above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
 
-            above_release = copy.deepcopy(config['arm']['release_pose'])
+            above_release = copy.deepcopy(release_start)
             above_release['position'][2] = above_release['position'][2] + pickup['height']
 
             arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
                                 above_grasp,
                                 above_release,
-                                copy.deepcopy(config['arm']['release_pose']) ]
+                                release_start ]
    
 
         # Build the post-release move.
-        arm_moves['post'] = [copy.deepcopy(config['arm']['release_pose']),
+        arm_moves['post'] = [release_end,
                             copy.deepcopy(config['arm']['final_pose'])   ]
 
         self.trajectory_built['arm'] = arm_moves
