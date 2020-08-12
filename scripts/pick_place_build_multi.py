@@ -226,19 +226,23 @@ class pickPlaceBuild:
 
             for row in self.config['hand']['grasp_sequence']:
                 hand_moves['grasp'].append(self.build_pressure_vec(self.config['hand'][row['pressure']], wait_before+row['time']))
+
+            grasp_end= self.config['hand'][self.config['hand']['grasp_sequence'][-1]['pressure']]
             
         else:
             hand_moves['grasp'].append(self.build_pressure_vec(initial, wait_before))
             hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration))
 
-        hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration+wait_after))
+            grasp_end= grasp
+
+        hand_moves['grasp'].append(self.build_pressure_vec(grasp_end, wait_before+grasp_duration+wait_after))
 
         wait_before = self.config['hand'].get('wait_before_release',0.0)
         grasp_duration = self.config['hand'].get('release_time',0.0)
         wait_after  = self.config['hand'].get('wait_after_release',0.0)
 
-        hand_moves['release']= [self.build_pressure_vec(grasp, 0.0), 
-                                self.build_pressure_vec(grasp, wait_before),
+        hand_moves['release']= [self.build_pressure_vec(grasp_end, 0.0), 
+                                self.build_pressure_vec(grasp_end, wait_before),
                                 self.build_pressure_vec(idle, wait_before+grasp_duration), 
                                 self.build_pressure_vec(idle, wait_before+grasp_duration+wait_after)]
 
