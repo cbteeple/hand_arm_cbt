@@ -67,18 +67,20 @@ class pickPlacePlan:
             self.sequence = self.traj_config['sequence']
             self.setup = self.sequence['setup']
             self.arm_segs = self.traj_config['arm']
+            self.settings = self.traj_config.get('settings',{})
             f.close()
 
         # Create the arm objects
-        if self.setup['arm_traj_space'] == 'cartesian':
-            self.arm_sender = ur_traj_sender_moveit(joint_names=JOINT_NAMES, non_excecuting=False)
+        if self.settings.get('use_arm',True):
+            if self.setup['arm_traj_space'] == 'cartesian':
+                self.arm_sender = ur_traj_sender_moveit(joint_names=JOINT_NAMES, non_excecuting=False)
 
-            #configure the planners based on the config file
-            self.arm_sender.config_planner(os.path.join(filepath_config,'moveit_config.yaml'))
-        else:
-            print('Nonstandard arm trajectory space')
-            self.arm_sender = None
-            raise
+                #configure the planners based on the config file
+                self.arm_sender.config_planner(os.path.join(filepath_config,'moveit_config.yaml'))
+            else:
+                print('Nonstandard arm trajectory space')
+                self.arm_sender = None
+                raise
 
 
     def plan_all(self):
@@ -90,9 +92,12 @@ class pickPlacePlan:
                 self.sequence = self.traj_config['sequence']
                 self.setup = self.sequence['setup']
                 self.arm_segs = self.traj_config['arm']
+                self.settings = self.traj_config.get('settings',{})
                 f.close()
 
-            self.plan_segments()
+            if self.settings.get('use_arm',True):
+                self.plan_segments()
+            
             self.save_plan(os.path.join(self.filepath,config_file))
 
 
@@ -106,8 +111,15 @@ class pickPlacePlan:
 
 
     def save_plan(self, in_file_name):
-        self.traj_config['arm'] = self.planned_segments
-        self.traj_config['sequence']['setup']['arm_traj_space'] = 'joint-planned'
+        if self.settings.get('use_arm',True):
+            self.traj_config['arm'] = self.planned_segments
+            self.traj_config['sequence']['setup']['arm_traj_space'] = 'joint-planned'
+        
+        else:
+            self.traj_config['arm'] = {}
+
+        if not self.settings.get('use_hand',True):
+            self.traj_config['hand'] = {}
 
         out_file =  in_file_name.replace('.yaml',"_planned.traj")
 
