@@ -35,6 +35,7 @@ from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
 from hand_arm_cbt.arm_mover import trajSender as ur_traj_sender
 from hand_arm_cbt.arm_moveit import MoveItPythonInteface as ur_traj_sender_moveit
 import rosbag_recorder.srv as rbr
+import video_recorder.srv as vrec
 
 
 reset_time = 2.0
@@ -61,6 +62,7 @@ class pickPlace:
         self.starting_index = rospy.get_param(rospy.get_name()+'/start',0)
         self.fake = rospy.get_param(rospy.get_name()+'/fake',False)
         self.out_id = rospy.get_param(rospy.get_name()+'/out_id',"")
+        self.use_camera = rospy.get_param(rospy.get_name()+'/use_camera',"")
 
         self.use_arm = rospy.get_param(rospy.get_name()+'/use_arm',True)
         self.use_hand = rospy.get_param(rospy.get_name()+'/use_hand',True)
@@ -188,6 +190,9 @@ class pickPlace:
     def start_saving(self):
         rospy.wait_for_service('rosbag_recorder/record_topics')
 
+        if self.use_camera:
+            rospy.wait_for_service('video_recorder/record')
+
         # generate the topic list
         topic_list = []
         if self.use_checklist:
@@ -201,6 +206,10 @@ class pickPlace:
         try:
             service = rospy.ServiceProxy('rosbag_recorder/record_topics', rbr.RecordTopics)
             response = service(self.out_filename, topic_list)
+
+            if self.use_camera:
+                service = rospy.ServiceProxy('video_recorder/record', vrec.RecordVideo)
+                response = service(self.out_filename.replace('.bag','.mp4'))
             return response.success
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
@@ -210,6 +219,10 @@ class pickPlace:
         try:
             service = rospy.ServiceProxy('rosbag_recorder/stop_recording', rbr.StopRecording)
             response = service(self.out_filename)
+
+            if self.use_camera:
+                service = rospy.ServiceProxy('video_recorder/stop_recording', vrec.StopRecording)
+                response = service(self.out_filename.replace('.bag','.mp4'))
             return response.success
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e

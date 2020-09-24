@@ -14,6 +14,7 @@
 <arg name="hand" default="true" doc="Use the hand" />
 <arg name="save" default="true" doc="Save data" />
 <arg name="fake" default="false" doc="Save data" />
+<arg name="use_camera" default="true" doc="Camera topic to save to" />
 
 <arg name="id" default="" doc="Some output ID that will be appended to the data filename" />
 
@@ -32,6 +33,7 @@
       	<param name="save_data" type="bool" value="$(arg save)" />
       	<param name="fake" type="bool" value="$(arg fake)" />
         <param name="out_id" type="str" value="$(arg id)" />
+		<param name="use_camera" type="bool" value="$(arg use_camera)" />
     </node>
 
 </launch>
