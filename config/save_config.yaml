@@ -1,2 +1,3 @@
+#save_folder: '/home/armando/Documents/data'
 save_folder: '/media/armando/LaCie/robot_data'
 save_folder_default: '/media/armando/DATA/robot_data'

@@ -17,6 +17,8 @@
 <arg name="use_camera" default="true" doc="Camera topic to save to" />
 
 <arg name="id" default="" doc="Some output ID that will be appended to the data filename" />
+<arg name="config" default="false" doc="Config file" />
+
 
 
 
@@ -24,16 +26,19 @@
     <node name="pick_and_place_node" pkg="hand_arm" type="pick_place_run_multi.py" respawn="false"
     	output="screen">
       	<param name="traj_profile" type="str" value="$(arg traj)" />
-      	<param name="speed_factor" type="double" value="$(arg speed_factor)" />
-      	<param name="num_reps" type="int" value="$(arg reps)" />
-      	<param name="replan" type="bool" value="$(arg replan)" />
-      	<param name="start" type="int" value="$(arg start)" />
-      	<param name="use_arm" type="bool" value="$(arg arm)" />
-      	<param name="use_hand" type="bool" value="$(arg hand)" />
-      	<param name="save_data" type="bool" value="$(arg save)" />
-      	<param name="fake" type="bool" value="$(arg fake)" />
-        <param name="out_id" type="str" value="$(arg id)" />
-		<param name="use_camera" type="bool" value="$(arg use_camera)" />
-    </node>
 
+		<param name="speed_factor" type="double" value="$(arg speed_factor)" />
+		<param name="num_reps" type="int" value="$(arg reps)" />
+		<param name="fake" type="bool" value="$(arg fake)" />
+		<param name="out_id" type="str" value="$(arg id)" />
+
+		<param name="replan" type="bool" value="$(arg replan)" unless="$(eval arg('config') !=0)" />
+		<param name="start" type="int" value="$(arg start)" unless="$(eval arg('config') !=0)" />
+		<param name="use_arm" type="bool" value="$(arg arm)" unless="$(eval arg('config') !=0)" />
+		<param name="use_hand" type="bool" value="$(arg hand)" unless="$(eval arg('config') !=0)" />
+		<param name="save_data" type="bool" value="$(arg save)" unless="$(eval arg('config') !=0)" />
+		<param name="use_camera" type="bool" value="$(arg use_camera)" unless="$(eval arg('config') !=0)" />
+
+		<rosparam command="load" file="$(find hand_arm)/config/run_configs/$(arg config)" if="$(eval arg('config') !=0)" />
+    </node>
 </launch>

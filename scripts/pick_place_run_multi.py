@@ -66,8 +66,11 @@ class pickPlace:
 
         self.use_arm = rospy.get_param(rospy.get_name()+'/use_arm',True)
         self.use_hand = rospy.get_param(rospy.get_name()+'/use_hand',True)
+        self.use_tags = rospy.get_param(rospy.get_name()+'/use_tags',True)
+        self.save_data = rospy.get_param(rospy.get_name()+'/save_data',False)
         self.use_checklist = rospy.get_param(rospy.get_name()+'/use_checklist',True)
         self.save_data = rospy.get_param(rospy.get_name()+'/save_data',False)
+        self.saving_now = False
         self.curr_file = None
         self.curr_rep  = None
 
@@ -202,6 +205,9 @@ class pickPlace:
             topic_list.extend(['/joint_states','/wrench','/tool_velocity'])
         if self.use_hand:
             topic_list.extend(['/pressure_control/echo','/pressure_control/pressure_data'])
+        
+        if self.use_tags:
+            topic_list.extend(['/tag_detections'])
 
         try:
             service = rospy.ServiceProxy('rosbag_recorder/record_topics', rbr.RecordTopics)
@@ -210,7 +216,10 @@ class pickPlace:
             if self.use_camera:
                 service = rospy.ServiceProxy('video_recorder/record', vrec.RecordVideo)
                 response = service(self.out_filename.replace('.bag','.mp4'))
+
+            self.saving_now = True
             return response.success
+            
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
 
@@ -223,6 +232,8 @@ class pickPlace:
             if self.use_camera:
                 service = rospy.ServiceProxy('video_recorder/stop_recording', vrec.StopRecording)
                 response = service(self.out_filename.replace('.bag','.mp4'))
+            
+            self.saving_now = False
             return response.success
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
@@ -231,7 +242,9 @@ class pickPlace:
 
     def createOutFolder(self,filename):
         now = datetime.now()
-        self.save_folder_curr = filename+'_'+ self.out_id + "_" + now.strftime("%Y%m%d_%H%M%S")
+        print(filename)
+        folder, file = os.path.split(filename)
+        self.save_folder_curr = os.path.join(folder, self.out_id, file+'_'+ now.strftime("%Y%m%d_%H%M%S"))
 
         dirname = os.path.abspath(os.path.join(os.path.expanduser('~'),self.save_data_folder,self.save_folder_curr))
         if not os.path.exists(dirname):
@@ -468,6 +481,7 @@ def main(file_name=None):
 
         node = pickPlace()
         node.run_multiple()
+        node.shutdown()
 
     except KeyboardInterrupt:
         print("Shutting Down Top-Level Node")

@@ -1,0 +1,8 @@
+# Settings for the pick-place-run-multi.launch file
+replan: False
+start: 0
+use_arm: True
+use_hand: True
+save_data: True
+use_camera: True
+
