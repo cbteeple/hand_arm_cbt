@@ -191,6 +191,7 @@ class pickPlaceBuild:
         grasping_move = [{'arm': False, 'hand': False, 'servo': False},
                          {'arm': False, 'hand': False, 'servo': False},
                          {'arm': False, 'hand': False, 'servo': False}]
+
         if grasp_hand_when == "during" and grasp_servo_when == "during" :
             grasping_move[0]['arm'] = 'grasp_move'
             grasping_move[0]['hand'] = 'grasp'
@@ -200,11 +201,15 @@ class pickPlaceBuild:
             grasping_move[1]['arm'] = 'grasp_move'
             if grasp_hand_when == "before":
                 grasping_move[0]['hand'] = 'grasp'
+            elif grasp_hand_when == "during":
+                grasping_move[1]['hand'] = 'grasp'
             else:
                 grasping_move[2]['hand'] = 'grasp'
 
             if grasp_servo_when == "before":
                 grasping_move[0]['servo'] = 'grasp'
+            elif grasp_servo_when == "during":
+                grasping_move[1]['servo'] = 'grasp'
             else:
                 grasping_move[2]['servo'] = 'grasp'
 
