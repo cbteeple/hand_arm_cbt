@@ -2,7 +2,9 @@
 replan: False
 start: 0
 use_arm: True
-use_hand: False
-save_data: False
+use_hand: True
+use_servo: False
+
+save_data: True
 use_camera: False
 

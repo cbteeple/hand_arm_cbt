@@ -121,6 +121,9 @@ class pickPlacePlan:
         if not self.settings.get('use_hand',True):
             self.traj_config['hand'] = {}
 
+        if not self.settings.get('use_servo',True):
+            self.traj_config['servo'] = {}
+
         out_file =  in_file_name.replace('.yaml',"_planned.traj")
 
         if not os.path.exists(os.path.dirname(out_file)):

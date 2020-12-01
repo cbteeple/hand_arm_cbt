@@ -31,9 +31,9 @@
 		<param name="num_reps" type="int" value="$(arg reps)" />
 		<param name="fake" type="bool" value="$(arg fake)" />
 		<param name="out_id" type="str" value="$(arg id)" />
+		<param name="start" type="int" value="$(arg start)"/>
 
 		<param name="replan" type="bool" value="$(arg replan)" unless="$(eval arg('config') !=0)" />
-		<param name="start" type="int" value="$(arg start)" unless="$(eval arg('config') !=0)" />
 		<param name="use_arm" type="bool" value="$(arg arm)" unless="$(eval arg('config') !=0)" />
 		<param name="use_hand" type="bool" value="$(arg hand)" unless="$(eval arg('config') !=0)" />
 		<param name="save_data" type="bool" value="$(arg save)" unless="$(eval arg('config') !=0)" />

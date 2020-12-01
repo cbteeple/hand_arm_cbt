@@ -66,6 +66,7 @@ class pickPlace:
 
         self.use_arm = rospy.get_param(rospy.get_name()+'/use_arm',True)
         self.use_hand = rospy.get_param(rospy.get_name()+'/use_hand',True)
+        self.use_servo = rospy.get_param(rospy.get_name()+'/use_servo',False)
         self.use_tags = rospy.get_param(rospy.get_name()+'/use_tags',True)
         self.save_data = rospy.get_param(rospy.get_name()+'/save_data',False)
         self.use_checklist = rospy.get_param(rospy.get_name()+'/use_checklist',True)
@@ -88,6 +89,8 @@ class pickPlace:
 
         self.in_files.sort()
         self.in_files=self.in_files[self.starting_index:]
+
+        print("STARTING AT POSITION: %d"%(self.starting_index))
 
         config_file =   os.path.join(self.filepath,self.in_files[0])
 
@@ -130,6 +133,12 @@ class pickPlace:
                 raise
         else:
             print('Not using hand - Hand moves will be skipped')
+
+        # Create the pneumatic hand object
+        if self.use_servo:
+                self.servo_sender = pneu_traj_sender(self.speed_factor, name='servo')
+        else:
+            print('Not using servo - Servo moves will be skipped')
 
 
         if self.save_data:
@@ -205,6 +214,8 @@ class pickPlace:
             topic_list.extend(['/joint_states','/wrench','/tool_velocity'])
         if self.use_hand:
             topic_list.extend(['/pressure_control/echo','/pressure_control/pressure_data'])
+        if self.use_servo:
+            topic_list.extend(['/servo/echo','/servo/pressure_data'])
         
         if self.use_tags:
             topic_list.extend(['/tag_detections'])
@@ -331,26 +342,35 @@ class pickPlace:
             out = {}
             out['arm']  = None
             out['hand'] = None
+            out['servo'] = None
             if move['arm']:
                  out['arm'] = self.traj_config['arm'].get(move['arm'], None)
 
             if move['hand']:
                 out['hand'] = self.traj_config['hand'].get(move['hand'], None)
 
+            if move.get('servo',False) and self.traj_config.get('servo',False):
+                out['servo'] = self.traj_config['servo'].get(move['servo'], None)
+
             self.operation_sequence.append(out)
 
 
 
     def go_to_start(self):
+        print('Go To Start')
         # Start the trajectories
         if self.use_hand:
             self.hand_sender.go_to_start(self.operation_sequence[0]['hand'], reset_time, blocking=False)
+        if self.use_servo:
+            self.servo_sender.go_to_start(self.operation_sequence[0]['servo'], reset_time, blocking=False)
         if self.use_arm:
             self.arm_sender.go_to_start(self.operation_sequence[0]['arm'], reset_time, blocking=False)
 
         # Wait for the traj to finish
         if self.use_hand:
             self.hand_sender.traj_client.wait_for_result()
+        if self.use_servo:
+            self.servo_sender.traj_client.wait_for_result()
         if self.use_arm:
             self.arm_sender.traj_client.wait_for_result()
 
@@ -365,6 +385,7 @@ class pickPlace:
                 out = {}
                 out['arm']  = None
                 out['hand'] = None
+                out['servo'] = None
                 if movement['arm'] is not None:
                     if self.use_arm:
                         out['arm'] = self.arm_sender.build_traj(movement['arm'])
@@ -376,6 +397,12 @@ class pickPlace:
                         out['hand'] = self.hand_sender.build_traj(movement['hand'])
                     else:
                         out['hand'] = None
+
+                if movement['servo'] is not None:
+                    if self.use_servo:
+                        out['servo'] = self.servo_sender.build_traj(movement['servo'])
+                    else:
+                        out['servo'] = None
 
                 self.operation_plans.append(out)
 
@@ -384,6 +411,7 @@ class pickPlace:
                 out = {}
                 out['arm']  = None
                 out['hand'] = None
+                out['servo'] = None
                 if movement['arm'] is not None:
                     if self.use_arm:
                         out['arm'] = self.arm_sender.build_traj(movement['arm'])
@@ -395,15 +423,25 @@ class pickPlace:
                     else:
                         out['hand'] = None
 
+                if movement['servo'] is not None:
+                    if self.use_servo:
+                        out['servo'] = self.servo_sender.build_traj(movement['servo'])
+                    else:
+                        out['servo'] = None
+
                 self.operation_plans.append(out)
 
 
 
 
     def excecute_sequence(self):
+        print('Excecute Sequence')
         for plan in self.operation_plans:
             if (plan['hand'] is not None) and (self.use_hand):
                 self.hand_sender.execute_traj(plan['hand'], blocking=False)
+
+            if (plan['servo'] is not None) and (self.use_servo):
+                self.servo_sender.execute_traj(plan['servo'], blocking=False)
 
             if (plan['arm'] is not None) and (self.use_arm):
                 if not self.fake:
@@ -413,6 +451,8 @@ class pickPlace:
 
             if self.use_hand:
                 self.hand_sender.traj_client.wait_for_result()
+            if self.use_servo:
+                self.servo_sender.traj_client.wait_for_result()
             if self.use_arm:
                 self.arm_sender.traj_client.wait_for_result()
 
@@ -466,6 +506,12 @@ class pickPlace:
             self.hand_sender.shutdown(reset_pressures='resting')
             #self.hand_sender.shutdown(reset_pressures=[2,0])
             print('-Stopped hand controller')
+        
+        if self.use_servo:
+            print('Stopping servo controller')
+            self.servo_sender.shutdown(reset_pressures='resting')
+            #self.hand_sender.shutdown(reset_pressures=[2,0])
+            print('-Stopped servo controller')
 
         if hard:
             if self.use_arm:

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+
+
+<!-- To use this   -->
+
+<!-- get the arguments from  -->
+<arg name="debug" default="False" doc="Whether debug is on" />
+<arg name="suffix" default="_servo" doc="Suffix to add to nodes" />
+
+
+<!-- Load controller settings -->
+  <group>
+  	<!-- Start the main serial sender -->
+  	<node name="pressure_control_server_node$(arg suffix)" pkg="pressure_controller_ros" type="comm_handler.py" respawn="false"
+    	output="screen">
+    	<rosparam file="$(find hand_arm)/config/serial_config_servo.yaml" command="load"/>
+      <param name="DEBUG" type="bool" value="$(arg debug)"/>
+    </node>
+
+  </group>
+</launch>

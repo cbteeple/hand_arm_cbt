@@ -54,6 +54,8 @@ class pickPlaceBuild:
         self.boomerang = self.config['settings']['boomerang']
         self.pattern_type = self.config['settings']['type']
 
+        self.use_servo = self.config['settings'].get('use_servo',False)
+
         self.traj_patterned = []
 
 
@@ -92,7 +94,10 @@ class pickPlaceBuild:
 
         self.trajectory_built = {}
         self.build_sequence()
-        self.build_grasp()
+        self.build_grasp('hand')
+        if self.use_servo:
+            self.build_grasp('servo')
+
         base_config = copy.deepcopy(self.config)
 
         perturb_num = 0
@@ -172,34 +177,81 @@ class pickPlaceBuild:
         sequence['startup'] = {}
         sequence['startup']['arm'] = 'pre'
         sequence['startup']['hand'] = 'startup'
+        sequence['startup']['servo'] = 'startup'
 
         sequence['operations'] = []
         ops = sequence['operations']
 
-        ops.append({'arm': 'pre', 'hand': 'startup'})
+        ops.append({'arm': 'pre', 'hand': 'startup', 'servo': 'startup'})
 
-        if self.config['hand'].get('grasp_start','after') == "during":
-            ops.append({'arm': 'grasp_move', 'hand': 'grasp'})
-        else:
-            ops.append({'arm': 'grasp_move', 'hand': False})
-            ops.append({'arm': False, 'hand': 'grasp'})
+
+        grasp_hand_when = self.config['hand'].get('grasp_start','after')
+        grasp_servo_when = self.config.get('servo',{'grasp_start':'after'})
+        grasp_servo_when = grasp_servo_when.get('grasp_start','after')
+        grasping_move = [{'arm': False, 'hand': False, 'servo': False},
+                         {'arm': False, 'hand': False, 'servo': False},
+                         {'arm': False, 'hand': False, 'servo': False}]
+        if grasp_hand_when == "during" and grasp_servo_when == "during" :
+            grasping_move[0]['arm'] = 'grasp_move'
+            grasping_move[0]['hand'] = 'grasp'
+            grasping_move[0]['servo'] = 'grasp'
+
+        else: #release after by default
+            grasping_move[1]['arm'] = 'grasp_move'
+            if grasp_hand_when == "before":
+                grasping_move[0]['hand'] = 'grasp'
+            else:
+                grasping_move[2]['hand'] = 'grasp'
+
+            if grasp_servo_when == "before":
+                grasping_move[0]['servo'] = 'grasp'
+            else:
+                grasping_move[2]['servo'] = 'grasp'
+
+        ops.extend(grasping_move)
+
+        #if self.config['hand'].get('grasp_start','after') == "during" and self.config['servo'].get('grasp_start','after') == "during":
+        #    ops.append({'arm': 'grasp_move', 'hand': 'grasp', 'servo': 'grasp'})
+        #elif self.config['hand'].get('grasp_start','after') == "during" and self.config['servo'].get('grasp_start','after') != "during":
+        #    ops.append({'arm': 'grasp_move', 'hand': 'grasp', 'servo': None})
+        #    ops.append({'arm': None, 'hand': None, 'servo': 'grasp'})
+        #elif self.config['hand'].get('grasp_start','after') != "during" and self.config['servo'].get('grasp_start','after') == "during":
+        #    ops.append({'arm': 'grasp_move', 'hand': None, 'servo': 'grasp'})
+        #    ops.append({'arm': None, 'hand': 'grasp', 'servo': None})
+        #else:
+        #    ops.append({'arm': 'grasp_move', 'hand': False, 'servo': False})
+        #    ops.append({'arm': False, 'hand': 'grasp', 'servo': 'grasp'})
         
-        ops.append({'arm': 'move', 'hand': False})
+        ops.append({'arm': 'move', 'hand': False, 'servo': False})
 
         if self.config['hand'].get('manip_sequence',False):
-            ops.append({'arm': False, 'hand': 'manip'})
+            ops.append({'arm': False, 'hand': 'manip', 'servo': False})
 
         release_when = self.config['hand'].get('release_start','after')
-        if release_when == "during":
-            ops.append({'arm': 'release_move', 'hand': 'release'})
-        elif release_when == "before":
-            ops.append({'arm': False, 'hand': 'release'})
-            ops.append({'arm': 'release_move', 'hand': False})
-        else: #release after by default
-            ops.append({'arm': 'release_move', 'hand': False})
-            ops.append({'arm': False, 'hand': 'release'})
+        release_servo = self.config.get('servo',{'release_start':'after'})
+        release_servo= release_servo.get('release_start','after')
+        rel_move =      [{'arm': False, 'hand': False, 'servo': False},
+                         {'arm': False, 'hand': False, 'servo': False},
+                         {'arm': False, 'hand': False, 'servo': False}]
+        if release_when == "during" and release_servo == "during" :
+            rel_move[0]['arm'] = 'release_move'
+            rel_move[0]['hand'] = 'release'
+            rel_move[0]['servo'] = 'release'
 
-        ops.append({'arm': 'post', 'hand': False})
+        else: #release after by default
+            rel_move[1]['arm'] = 'release_move'
+            if release_when == "before":
+                rel_move[0]['hand'] = 'release'
+            else:
+                rel_move[2]['hand'] = 'release'
+
+            if release_servo == "before":
+                rel_move[0]['servo'] = 'release'
+            else:
+                rel_move[2]['servo'] = 'release'
+
+        ops.extend(rel_move)
+        ops.append({'arm': 'post', 'hand': False,'servo': False})
 
 
 
@@ -208,31 +260,31 @@ class pickPlaceBuild:
 
 
 
-    def build_grasp(self):
+    def build_grasp(self, channel='hand'):
         pass
 
         hand_moves = {}
 
-        idle  = [ float(x) for x in self.config['hand']['idle_pressure'] ]
+        idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]
 
-        grasp = [ float(x) for x in self.config['hand']['grasp_pressure'] ]
+        grasp = [ float(x) for x in self.config[channel]['grasp_pressure'] ]
 
-        initial = [ float(x) for x in self.config['hand'].get('initial_pressure',idle) ]
+        initial = [ float(x) for x in self.config[channel].get('initial_pressure',idle) ]
 
 
-        wait_before = self.config['hand'].get('wait_before_grasp',0.0)
-        grasp_duration = self.config['hand'].get('grasp_time',0.0)
-        wait_after  = self.config['hand'].get('wait_after_grasp',0.0)
+        wait_before = self.config[channel].get('wait_before_grasp',0.0)
+        grasp_duration = self.config[channel].get('grasp_time',0.0)
+        wait_after  = self.config[channel].get('wait_after_grasp',0.0)
 
         hand_moves['grasp']= [self.build_pressure_vec(initial, 0.0)]
 
-        if self.config['hand'].get('grasp_sequence',False):
-            grasp_duration = self.config['hand']['grasp_sequence'][-1]['time']
+        if self.config[channel].get('grasp_sequence',False):
+            grasp_duration = self.config[channel]['grasp_sequence'][-1]['time']
 
-            for row in self.config['hand']['grasp_sequence']:
-                hand_moves['grasp'].append(self.build_pressure_vec(self.config['hand'][row['pressure']], wait_before+row['time']))
+            for row in self.config[channel]['grasp_sequence']:
+                hand_moves['grasp'].append(self.build_pressure_vec(self.config[channel][row['pressure']], wait_before+row['time']))
 
-            grasp_end= self.config['hand'][self.config['hand']['grasp_sequence'][-1]['pressure']]
+            grasp_end= self.config[channel][self.config[channel]['grasp_sequence'][-1]['pressure']]
             
         else:
             hand_moves['grasp'].append(self.build_pressure_vec(initial, wait_before))
@@ -244,24 +296,24 @@ class pickPlaceBuild:
 
 
         manip_duration = 0.0
-        if self.config['hand'].get('manip_sequence',False):
-            num_reps=int(self.config['hand'].get('manip_repeat',1))
+        if self.config[channel].get('manip_sequence',False):
+            num_reps=int(self.config[channel].get('manip_repeat',1))
 
-            manip_duration = self.config['hand']['manip_sequence'][-1]['time']
+            manip_duration = self.config[channel]['manip_sequence'][-1]['time']
 
-            first_point = self.config['hand']['manip_sequence'][0]
-            self.config['hand']['manip_sequence'].pop(0)
+            first_point = self.config[channel]['manip_sequence'][0]
+            self.config[channel]['manip_sequence'].pop(0)
 
             hand_moves['manip'] = []
-            hand_moves['manip'].append(self.build_pressure_vec(self.config['hand'][first_point['pressure']], first_point['time']))
+            hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][first_point['pressure']], first_point['time']))
             for rep in range(num_reps):
-                for row in self.config['hand']['manip_sequence']:
-                    hand_moves['manip'].append(self.build_pressure_vec(self.config['hand'][row['pressure']], rep*manip_duration+row['time']))           
+                for row in self.config[channel]['manip_sequence']:
+                    hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][row['pressure']], rep*manip_duration+row['time']))           
 
 
-        wait_before = self.config['hand'].get('wait_before_release',0.0)
-        grasp_duration = self.config['hand'].get('release_time',0.0)
-        wait_after  = self.config['hand'].get('wait_after_release',0.0)
+        wait_before = self.config[channel].get('wait_before_release',0.0)
+        grasp_duration = self.config[channel].get('release_time',0.0)
+        wait_after  = self.config[channel].get('wait_after_release',0.0)
 
         hand_moves['release']= [self.build_pressure_vec(grasp_end, 0.0), 
                                 self.build_pressure_vec(grasp_end, wait_before),
@@ -272,7 +324,7 @@ class pickPlaceBuild:
                                  self.build_pressure_vec(initial, 0.0)]
 
 
-        self.trajectory_built['hand'] = hand_moves
+        self.trajectory_built[channel] = hand_moves
 
     
 
