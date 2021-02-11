@@ -58,6 +58,9 @@ class pickPlaceBuild:
 
         self.traj_patterned = []
 
+        self.max_p = self.config['hand'].get("max_pressure", np.inf)
+        self.min_p  = self.config['hand'].get("min_pressure", -np.inf)
+
 
 
     def create_traj_pattern(self):
@@ -334,7 +337,47 @@ class pickPlaceBuild:
     
 
     def build_pressure_vec(self,pressures, time):
-        out = copy.deepcopy(pressures)
+        # Coerce pressures
+        pressure_too_high = False
+        pressure_too_low = False
+        if isinstance(self.max_p, list):
+            if len(pressures) != len(self.max_p):
+                raise ValueError("Max pressure list needs to be the same length as the pressure vectors")
+            else:
+                max_p = self.max_p
+        else:
+            max_p = [self.max_p]*len(pressures)
+
+        if isinstance(self.min_p, list):
+            if len(pressures) != len(self.min_p):
+                raise ValueError("Min pressure list needs to be the same length as the pressure vectors")
+            else:
+                min_p = self.min_p
+        else:
+            min_p = [self.min_p]*len(pressures)
+
+        pressure_out = []
+        for idx, pressure in enumerate(pressures):
+            if pressure > max_p[idx]:
+                pressure_out.append(max_p[idx])
+                pressure_too_high = True
+            elif pressure < min_p[idx]:
+                pressure_out.append(min_p[idx])
+                pressure_too_low = True
+            else:
+                pressure_out.append(pressure)
+
+        if pressure_too_high:
+            print("Some pressures were too high - pressures coerced")
+            print(pressures)
+            print(pressure_out)
+
+        if pressure_too_low:
+            print("Some pressures were too low - pressures coerced")
+            print(pressures)
+            print(pressure_out)
+
+        out = copy.deepcopy(pressure_out)
         out.insert(0,time)
         return out
 

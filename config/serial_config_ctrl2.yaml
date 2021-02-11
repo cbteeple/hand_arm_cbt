@@ -1,0 +1,6 @@
+# Serial Info
+devname: /dev/ttyACM0 #/dev/hidraw4
+baudrate: 115200 #115200
+traj_server_rate: 20
+data_channel: "servo"
+use_traj_server: True

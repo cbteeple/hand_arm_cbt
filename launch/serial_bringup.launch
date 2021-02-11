@@ -14,7 +14,7 @@
   	<!-- Start the main serial sender -->
   	<node name="pressure_control_server_node$(arg suffix)" pkg="pressure_controller_ros" type="comm_handler.py" respawn="false"
     	output="screen">
-    	<rosparam file="$(find hand_arm)/config/serial_config_servo.yaml" command="load"/>
+    	<rosparam file="$(find hand_arm)/config/serial_config_ctrl2.yaml" command="load"/>
       <param name="DEBUG" type="bool" value="$(arg debug)"/>
     </node>
 
