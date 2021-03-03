@@ -31,8 +31,8 @@ import matplotlib.pyplot as plt
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
 
-scaler = 1.0
-reset_time = 10.0
+time_scaler = 1.0
+reset_time = 4.0
     
 arm_client = None
 arm_trajIn = []
@@ -95,10 +95,16 @@ def build_traj():
     traj_time=[]
 
     for point in arm_trajIn:
-        curr_pt = JointTrajectoryPoint(positions=point['joints_pos'], velocities=point['joints_vel'], time_from_start=rospy.Duration((point['time']-time_offset)*scaler))
+        curr_pt = JointTrajectoryPoint(positions=point['joints_pos'], velocities=point['joints_vel'], time_from_start=rospy.Duration((point['time']-time_offset)*time_scaler))
         g.trajectory.points.append(curr_pt)
         traj_pts.append(point['joints_pos'])
-        traj_time.append((point['time']-time_offset)*scaler)
+        traj_time.append((point['time']-time_offset)*time_scaler)
+
+    point=arm_trajIn[-1]
+    curr_pt = JointTrajectoryPoint(positions=point['joints_pos'], velocities=point['joints_vel'], time_from_start=rospy.Duration((point['time']-time_offset)*time_scaler +2.0))
+    g.trajectory.points.append(curr_pt)
+    traj_pts.append(point['joints_pos'])
+    traj_time.append((point['time']-time_offset)*time_scaler)
 
 
 
@@ -134,7 +140,10 @@ def execute_traj():
 
 
    
-def main(file_name=None):
+def main(file_name=None, scaler=None):
+    global time_scaler
+    if scaler is not None and scaler!=0.0:
+        time_scaler = 1.0/scaler
     global arm_client
     global arm_trajIn
     try:
@@ -172,6 +181,8 @@ if __name__ == '__main__':
         main()
     elif len(sys.argv) ==2:
         main(sys.argv[1])
+    elif len(sys.argv) ==3:
+        main(sys.argv[1], float(sys.argv[2]))
     else:
         print("Usage:")
         print("\tteach.py \t\t- Enable freedrive but don't save")

@@ -99,6 +99,8 @@ class Teacher:
 
         print (["{0:0.2f}".format(i) for i in joint_pos_deg])
 
+
+
         if self.traj_file is not None:
             self.joint_traj.append(out)
 

@@ -70,7 +70,6 @@ class pickPlace:
         self.use_tags = rospy.get_param(rospy.get_name()+'/use_tags',True)
         self.save_data = rospy.get_param(rospy.get_name()+'/save_data',False)
         self.use_checklist = rospy.get_param(rospy.get_name()+'/use_checklist',True)
-        self.save_data = rospy.get_param(rospy.get_name()+'/save_data',False)
         self.saving_now = False
         self.curr_file = None
         self.curr_rep  = None
@@ -266,7 +265,7 @@ class pickPlace:
 
     def createOutFile(self,filename=None):
 
-        if not filename:
+        if filename is None:
             #print(self.curr_file)
             #print(self.curr_rep)
             if (self.curr_file is None) or (self.curr_rep is None):

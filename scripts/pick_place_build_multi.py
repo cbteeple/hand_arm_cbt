@@ -84,8 +84,24 @@ class pickPlaceBuild:
 
             self.perturbations = np.vstack((x1,x2,x3)).transpose().tolist()
 
+            rel_dims = grid_settings.get('release_dims',None)
+
+            if rel_dims is not None:
+                x = np.linspace(-rel_dims[0]/2, rel_dims[0]/2, num_pts[0])
+                y = np.linspace(-rel_dims[1]/2, rel_dims[1]/2, num_pts[1])
+                z = np.linspace(-rel_dims[2]/2, rel_dims[2]/2, num_pts[2])
+
+                x1,x2,x3 = np.meshgrid(x,y,z)
+
+                x1 = x1.flatten()
+                x2 = x2.flatten()
+                x3 = x3.flatten()
+
+            self.release_perturbations = np.vstack((x1,x2,x3)).transpose().tolist()
+
         else:
             self.perturbations = [0,0,0]
+            self.release_perturbations = [0,0,0]
 
 
 
@@ -110,7 +126,7 @@ class pickPlaceBuild:
         if self.pattern_type == 'grid':
             shift_release_pose = self.config['arm']['grid'].get('affects_release_pose',True)
 
-            for entry in self.perturbations:
+            for entry, release_entry in zip(self.perturbations, self.release_perturbations):
                 
                 # Update with current perturbation
                 curr_config = copy.deepcopy(base_config)
@@ -126,7 +142,7 @@ class pickPlaceBuild:
 
                 if shift_release_pose:
                     for idx, axis in enumerate(curr_config['arm']['release_pose']['position']):
-                        curr_config['arm']['release_pose']['position'][idx] = axis + entry[idx]
+                        curr_config['arm']['release_pose']['position'][idx] = axis + release_entry[idx]
 
                 self.build_moves(curr_config)
 
@@ -316,7 +332,9 @@ class pickPlaceBuild:
             hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][first_point['pressure']], first_point['time']))
             for rep in range(num_reps):
                 for row in self.config[channel]['manip_sequence']:
-                    hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][row['pressure']], rep*manip_duration+row['time']))           
+                    hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][row['pressure']], rep*manip_duration+row['time']))    
+
+            grasp_end = self.config[channel][row['pressure']]  
 
 
         wait_before = self.config[channel].get('wait_before_release',0.0)
