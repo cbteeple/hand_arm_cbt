@@ -312,18 +312,18 @@ class pickPlace:
 
             with open(config_file,'r') as f:
                 self.traj_config = pickle.load(f)
-                self.operations = self.traj_config['sequence']
-                f.close()
+            self.operations = self.traj_config['sequence']
+            self.settings = self.traj_config['settings']
 
-                self.get_sequence()
+            self.get_sequence()
 
-                # Go to the start
-                #inp = raw_input("Move to Starting Position? (Press ENTER)")
-                self.go_to_start()
-                self.plan_sequence()
+            # Go to the start
+            #inp = raw_input("Move to Starting Position? (Press ENTER)")
+            self.go_to_start()
+            self.plan_sequence()
 
-                # Excecute the trajectory the desired number of times
-                self.rep_sequence(wait_before_each = False)
+            # Excecute the trajectory the desired number of times
+            self.rep_sequence(wait_before_each = False)
                 
 
         #except KeyboardInterrupt:
@@ -482,7 +482,8 @@ class pickPlace:
 
                 self.mark_success(inp)
 
-            self.go_to_start()
+            if not self.settings.get('reset_object', False):
+                self.go_to_start()
 
 
 

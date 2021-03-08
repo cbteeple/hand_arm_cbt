@@ -9,6 +9,7 @@
 <arg name="reps" default="1" doc="The number of reps" />
 <arg name="replan" default="false" doc="decide whether to re-plan the trajectories on the fly" />
 <arg name="start" default="0" doc="Where to start" />
+<arg name="use_checklist" default="true" doc="Ask for a success label after each rep" />
 
 <arg name="arm" default="true" doc="Use the arm" />
 <arg name="hand" default="true" doc="Use the hand" />
@@ -32,6 +33,7 @@
 		<param name="fake" type="bool" value="$(arg fake)" />
 		<param name="out_id" type="str" value="$(arg id)" />
 		<param name="start" type="int" value="$(arg start)"/>
+		<param name="use_checklist" type="bool" value="$(arg use_checklist)"/>
 
 		<param name="replan" type="bool" value="$(arg replan)" unless="$(eval arg('config') !=0)" />
 		<param name="use_arm" type="bool" value="$(arg arm)" unless="$(eval arg('config') !=0)" />

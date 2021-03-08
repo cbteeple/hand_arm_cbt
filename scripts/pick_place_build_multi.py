@@ -52,6 +52,7 @@ class pickPlaceBuild:
             f.close()
 
         self.boomerang = self.config['settings']['boomerang']
+        self.reset_object = self.config['settings'].get('reset_object', False)
         self.pattern_type = self.config['settings']['type']
 
         self.use_servo = self.config['settings'].get('use_servo',False)
@@ -184,29 +185,7 @@ class pickPlaceBuild:
 
 
 
-    def build_sequence(self):
-        # get the trajectories
-        
-        sequence = {}
-
-        sequence['setup'] = {}
-        sequence['setup']['arm_traj_space']  = 'cartesian'
-        sequence['setup']['hand_traj_space'] = 'pressure'
-
-        sequence['startup'] = {}
-        sequence['startup']['arm'] = 'pre'
-        sequence['startup']['hand'] = 'startup'
-        sequence['startup']['servo'] = 'startup'
-
-        sequence['operations'] = []
-        ops = sequence['operations']
-
-        ops.append({'arm': 'pre', 'hand': 'startup', 'servo': 'startup'})
-
-
-        grasp_hand_when = self.config['hand'].get('grasp_start','after')
-        grasp_servo_when = self.config.get('servo',{'grasp_start':'after'})
-        grasp_servo_when = grasp_servo_when.get('grasp_start','after')
+    def build_grasping_sequece(self, grasp_hand_when, grasp_servo_when):
         grasping_move = [{'arm': False, 'hand': False, 'servo': False},
                          {'arm': False, 'hand': False, 'servo': False},
                          {'arm': False, 'hand': False, 'servo': False}]
@@ -231,6 +210,35 @@ class pickPlaceBuild:
                 grasping_move[1]['servo'] = 'grasp'
             else:
                 grasping_move[2]['servo'] = 'grasp'
+
+        return grasping_move
+
+
+
+    def build_sequence(self):
+        # get the trajectories
+        
+        sequence = {}
+
+        sequence['setup'] = {}
+        sequence['setup']['arm_traj_space']  = 'cartesian'
+        sequence['setup']['hand_traj_space'] = 'pressure'
+
+        sequence['startup'] = {}
+        sequence['startup']['arm'] = 'pre'
+        sequence['startup']['hand'] = 'startup'
+        sequence['startup']['servo'] = 'startup'
+
+        sequence['operations'] = []
+        ops = sequence['operations']
+
+        ops.append({'arm': 'pre', 'hand': 'startup', 'servo': 'startup'})
+
+        grasp_hand_when = self.config['hand'].get('grasp_start','after')
+        grasp_servo_when = self.config.get('servo',{'grasp_start':'after'})
+        grasp_servo_when = grasp_servo_when.get('grasp_start','after')
+
+        grasping_move = self.build_grasping_sequece(grasp_hand_when,grasp_servo_when)
 
         ops.extend(grasping_move)
 
@@ -276,6 +284,35 @@ class pickPlaceBuild:
 
         ops.extend(rel_move)
         ops.append({'arm': 'post', 'hand': False,'servo': False})
+
+        if self.reset_object:
+            ops.append({'arm': 'post_inv', 'hand': False,'servo': False})
+            rel_move_inv=copy.deepcopy(list(reversed(rel_move)))
+            grasping_move_inv=copy.deepcopy(list(reversed(grasping_move)))
+
+            grasping_move_inv = self.build_grasping_sequece('before','before')
+
+            for item in rel_move_inv:
+                if item['arm'] == 'release_move':
+                    item['arm'] = 'release_move_inv'
+
+                if item['hand'] == 'release':
+                    item['hand'] = 'grasp'
+
+            for item in grasping_move_inv:
+                if item['arm'] == 'grasp_move':
+                    item['arm'] = 'grasp_move_inv'
+
+                if item['hand'] == 'grasp':
+                    item['hand'] = 'release'
+
+            ops.extend(rel_move_inv)
+            ops.append({'arm': 'move_inv', 'hand': False, 'servo': False})
+            ops.extend(grasping_move_inv)
+
+            ops.append({'arm': 'pre_inv', 'hand': 'startup', 'servo': 'startup'})
+
+        print(ops)
 
 
 
@@ -348,6 +385,24 @@ class pickPlaceBuild:
 
         hand_moves['startup'] = [self.build_pressure_vec(initial, 0.0), 
                                  self.build_pressure_vec(initial, 0.0)]
+
+
+        if self.reset_object:
+            hand_moves['release_inv']= [
+                                self.build_pressure_vec(idle, 0.0),
+                                self.build_pressure_vec(idle, wait_before),
+                                self.build_pressure_vec(grasp_end, wait_before+grasp_duration),
+                                self.build_pressure_vec(grasp_end, wait_before+grasp_duration+wait_after)]
+
+            end_time = hand_moves['grasp'][-1][0]
+            grasp_inv = copy.deepcopy(list(reversed(hand_moves['grasp'])))
+            for waypoint in grasp_inv:
+                waypoint[0] = end_time - waypoint[0]
+            
+            hand_moves['grasp_inv'] = grasp_inv
+
+            
+            hand_moves['startup_inv'] = copy.deepcopy(list(reversed(hand_moves['startup'])))
 
 
         self.trajectory_built[channel] = hand_moves
@@ -444,7 +499,6 @@ class pickPlaceBuild:
 
 
 
-
         pickup = config['arm'].get('pickup', None)
 
         if pickup is None:
@@ -498,6 +552,14 @@ class pickPlaceBuild:
         # Build the post-release move.
         arm_moves['post'] = [release_end,
                             copy.deepcopy(config['arm']['final_pose'])   ]
+
+
+        if self.reset_object:
+            arm_moves['release_move_inv'] = copy.deepcopy(list(reversed(arm_moves['release_move'])))
+            arm_moves['move_inv'] = copy.deepcopy(list(reversed(arm_moves['move'])))
+            arm_moves['grasp_move_inv'] = copy.deepcopy(list(reversed(arm_moves['grasp_move'])))
+            arm_moves['pre_inv'] = copy.deepcopy(list(reversed(arm_moves['pre'])))
+            arm_moves['post_inv'] = copy.deepcopy(list(reversed(arm_moves['post'])))
 
         self.trajectory_built['arm'] = arm_moves
 
