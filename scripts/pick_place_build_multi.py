@@ -24,7 +24,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
-
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 
 
@@ -32,6 +32,11 @@ import copy
 curr_path=os.path.dirname(os.path.abspath(__file__))
 filepath_traj = os.path.join(curr_path,'..','traj_setup')
 filepath_out = os.path.join(curr_path,'..','trajectories')
+
+
+
+
+
 
 
 
@@ -61,6 +66,7 @@ class pickPlaceBuild:
 
         self.max_p = self.config['hand'].get("max_pressure", np.inf)
         self.min_p  = self.config['hand'].get("min_pressure", -np.inf)
+        self.hand_type=self.config['hand'].get('type','pressure_controlled')
 
 
 
@@ -142,6 +148,11 @@ class pickPlaceBuild:
                         curr_config['arm']['grasp_pose']['position'][idx] = axis + entry[idx]
 
                 if shift_release_pose:
+                    if isinstance(curr_config['arm']['release_pose'], list):
+                        for row_idx, row in enumerate(curr_config['arm']['release_pose']):
+                            for axis_idx, axis in enumerate(row['position']):
+                                curr_config['arm']['release_pose'][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
+                else:
                     for idx, axis in enumerate(curr_config['arm']['release_pose']['position']):
                         curr_config['arm']['release_pose']['position'][idx] = axis + release_entry[idx]
 
@@ -185,7 +196,7 @@ class pickPlaceBuild:
 
 
 
-    def build_grasping_sequece(self, grasp_hand_when, grasp_servo_when):
+    def build_grasping_sequence(self, grasp_hand_when, grasp_servo_when):
         grasping_move = [{'arm': False, 'hand': False, 'servo': False},
                          {'arm': False, 'hand': False, 'servo': False},
                          {'arm': False, 'hand': False, 'servo': False}]
@@ -222,7 +233,10 @@ class pickPlaceBuild:
 
         sequence['setup'] = {}
         sequence['setup']['arm_traj_space']  = 'cartesian'
-        sequence['setup']['hand_traj_space'] = 'pressure'
+        if 'robotiq' in self.hand_type:
+            sequence['setup']['hand_traj_space'] = 'robotiq'
+        else:
+            sequence['setup']['hand_traj_space'] = 'pressure'
 
         sequence['startup'] = {}
         sequence['startup']['arm'] = 'pre'
@@ -238,7 +252,7 @@ class pickPlaceBuild:
         grasp_servo_when = self.config.get('servo',{'grasp_start':'after'})
         grasp_servo_when = grasp_servo_when.get('grasp_start','after')
 
-        grasping_move = self.build_grasping_sequece(grasp_hand_when,grasp_servo_when)
+        grasping_move = self.build_grasping_sequence(grasp_hand_when,grasp_servo_when)
 
         ops.extend(grasping_move)
 
@@ -290,7 +304,7 @@ class pickPlaceBuild:
             rel_move_inv=copy.deepcopy(list(reversed(rel_move)))
             grasping_move_inv=copy.deepcopy(list(reversed(grasping_move)))
 
-            grasping_move_inv = self.build_grasping_sequece('before','before')
+            grasping_move_inv = self.build_grasping_sequence('before','before')
 
             for item in rel_move_inv:
                 if item['arm'] == 'release_move':
@@ -320,17 +334,35 @@ class pickPlaceBuild:
         self.trajectory_built['sequence'] = sequence
 
 
+    def dict_to_list(self, dict, keys):
+        out = []
+        for key in keys:
+            val = dict.get(key, None)
+            if val is not None:
+                val = float(val)
+            out.append(val)
+        print(out)
+        return out
+
+
 
     def build_grasp(self, channel='hand'):
-        pass
-
         hand_moves = {}
 
-        idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]
 
-        grasp = [ float(x) for x in self.config[channel]['grasp_pressure'] ]
+        if 'robotiq' in self.hand_type:
+            self.keylist = ['pos','speed','force']
+            idle  = self.config[channel]['idle_pos']
+            grasp = self.config[channel]['grasp_pos']
+            initial = self.config[channel].get('initial_pos')
+            act_kwd = 'pos'
 
-        initial = [ float(x) for x in self.config[channel].get('initial_pressure',idle) ]
+
+        else:
+            idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]
+            grasp = [ float(x) for x in self.config[channel]['grasp_pressure'] ]
+            initial = [ float(x) for x in self.config[channel].get('initial_pressure',idle) ]
+            act_kwd = 'pressure'
 
 
         wait_before = self.config[channel].get('wait_before_grasp',0.0)
@@ -343,9 +375,10 @@ class pickPlaceBuild:
             grasp_duration = self.config[channel]['grasp_sequence'][-1]['time']
 
             for row in self.config[channel]['grasp_sequence']:
-                hand_moves['grasp'].append(self.build_pressure_vec(self.config[channel][row['pressure']], wait_before+row['time']))
+                new_row = self.config[channel][row[act_kwd]]
+                hand_moves['grasp'].append(self.build_pressure_vec(new_row, wait_before+row['time']))
 
-            grasp_end= self.config[channel][self.config[channel]['grasp_sequence'][-1]['pressure']]
+            grasp_end= self.config[channel][self.config[channel]['grasp_sequence'][-1][act_kwd]]
             
         else:
             hand_moves['grasp'].append(self.build_pressure_vec(initial, wait_before))
@@ -366,12 +399,12 @@ class pickPlaceBuild:
             self.config[channel]['manip_sequence'].pop(0)
 
             hand_moves['manip'] = []
-            hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][first_point['pressure']], first_point['time']))
+            hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][first_point[act_kwd]], first_point['time']))
             for rep in range(num_reps):
                 for row in self.config[channel]['manip_sequence']:
-                    hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][row['pressure']], rep*manip_duration+row['time']))    
+                    hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][row[act_kwd]], rep*manip_duration+row['time']))    
 
-            grasp_end = self.config[channel][row['pressure']]  
+            grasp_end = self.config[channel][row[act_kwd]]  
 
 
         wait_before = self.config[channel].get('wait_before_release',0.0)
@@ -409,7 +442,7 @@ class pickPlaceBuild:
 
     
 
-    def build_pressure_vec(self,pressures, time):
+    def build_pressure_vec(self,pressures, time):      
         # Coerce pressures
         pressure_too_high = False
         pressure_too_low = False
@@ -429,16 +462,21 @@ class pickPlaceBuild:
         else:
             min_p = [self.min_p]*len(pressures)
 
-        pressure_out = []
-        for idx, pressure in enumerate(pressures):
-            if pressure > max_p[idx]:
-                pressure_out.append(max_p[idx])
-                pressure_too_high = True
-            elif pressure < min_p[idx]:
-                pressure_out.append(min_p[idx])
-                pressure_too_low = True
-            else:
-                pressure_out.append(pressure)
+        if ('robotiq' in self.hand_type):
+            pressure_out=self.dict_to_list(pressures,self.keylist)
+
+        else:
+            pressure_out = []
+            for idx, pressure in enumerate(pressures):
+                if pressure > max_p[idx]:
+                    pressure_out.append(max_p[idx])
+                    pressure_too_high = True
+                elif pressure < min_p[idx]:
+                    pressure_out.append(min_p[idx])
+                    pressure_too_low = True
+                else:
+                    pressure_out.append(pressure)
+                
 
         if pressure_too_high:
             print("Some pressures were too high - pressures coerced")
@@ -560,6 +598,21 @@ class pickPlaceBuild:
             arm_moves['grasp_move_inv'] = copy.deepcopy(list(reversed(arm_moves['grasp_move'])))
             arm_moves['pre_inv'] = copy.deepcopy(list(reversed(arm_moves['pre'])))
             arm_moves['post_inv'] = copy.deepcopy(list(reversed(arm_moves['post'])))
+
+        # Convert euler angles to quaterions if needed
+        orientation_type = config['arm'].get('orientation_type')
+        if orientation_type is not None:
+            for key in arm_moves:
+                curr_move = arm_moves[key]
+                for entry in curr_move:
+                    if len(entry['orientation'])==3:
+                        if orientation_type == 'degrees':
+                            entry_to_use = np.deg2rad(entry['orientation']).tolist()
+                        else:
+                            entry_to_use = copy.deepcopy(entry['orientation'])
+                        ori_quat = quaternion_from_euler(entry_to_use[0],entry_to_use[1],entry_to_use[2])
+                        entry['orientation'] = ori_quat.tolist()          
+
 
         self.trajectory_built['arm'] = arm_moves
 

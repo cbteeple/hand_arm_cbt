@@ -33,6 +33,7 @@ from datetime import datetime
 
 from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
 from hand_arm_cbt.arm_mover import trajSender as ur_traj_sender
+from robotiq_trajectory_control.robotiq_2f_trajectory import trajSender as robotiq_traj_sender
 from hand_arm_cbt.arm_moveit import MoveItPythonInteface as ur_traj_sender_moveit
 import rosbag_recorder.srv as rbr
 import video_recorder.srv as vrec
@@ -127,6 +128,10 @@ class pickPlace:
         if self.use_hand:
             if setup['hand_traj_space'] == 'pressure':
                 self.hand_sender = pneu_traj_sender(self.speed_factor)
+            elif setup['hand_traj_space'] == 'robotiq':
+                print("getting for robotiq hand traj server")
+                self.hand_sender = robotiq_traj_sender(self.speed_factor)
+                print("waiting for robotiq hand traj server")
             else:
                 print('Nonstandard hand trajectory space')
                 raise
@@ -352,6 +357,7 @@ class pickPlace:
                 out['servo'] = self.traj_config['servo'].get(move['servo'], None)
 
             self.operation_sequence.append(out)
+
 
 
 
