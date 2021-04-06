@@ -6,6 +6,5 @@ use_hand: True
 use_servo: True
 
 # Set up video and april tags
-use_camera: False
-use_tags: False
-
+use_camera: True
+use_tags: True

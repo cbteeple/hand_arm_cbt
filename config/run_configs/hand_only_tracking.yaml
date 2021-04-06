@@ -1,8 +1,11 @@
 # Settings for the pick-place-run-multi.launch file
-replan: False
-start: 0
+
+# Set up devices to use
 use_arm: False
 use_hand: True
-save_data: True
+use_servo: False
+
+# Set up video and april tags
 use_camera: True
+use_tags: True
 

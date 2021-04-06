@@ -369,24 +369,34 @@ class pickPlaceBuild:
         grasp_duration = self.config[channel].get('grasp_time',0.0)
         wait_after  = self.config[channel].get('wait_after_grasp',0.0)
 
-        hand_moves['grasp']= [self.build_pressure_vec(initial, 0.0)]
 
-        if self.config[channel].get('grasp_sequence',False):
-            grasp_duration = self.config[channel]['grasp_sequence'][-1]['time']
-
-            for row in self.config[channel]['grasp_sequence']:
-                new_row = self.config[channel][row[act_kwd]]
-                hand_moves['grasp'].append(self.build_pressure_vec(new_row, wait_before+row['time']))
-
-            grasp_end= self.config[channel][self.config[channel]['grasp_sequence'][-1][act_kwd]]
-            
-        else:
-            hand_moves['grasp'].append(self.build_pressure_vec(initial, wait_before))
+        if 'robotiq' in self.hand_type:
+            hand_moves['grasp']= []
+            if wait_before>0.0:
+                hand_moves['grasp'].append(self.build_pressure_vec(initial, 0.0))
             hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration))
-
+            hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration+wait_after))
             grasp_end= grasp
 
-        hand_moves['grasp'].append(self.build_pressure_vec(grasp_end, wait_before+grasp_duration+wait_after))
+        else:
+            hand_moves['grasp']= [self.build_pressure_vec(initial, 0.0)]
+
+            if self.config[channel].get('grasp_sequence',False):
+                grasp_duration = self.config[channel]['grasp_sequence'][-1]['time']
+
+                for row in self.config[channel]['grasp_sequence']:
+                    new_row = self.config[channel][row[act_kwd]]
+                    hand_moves['grasp'].append(self.build_pressure_vec(new_row, wait_before+row['time']))
+
+                grasp_end= self.config[channel][self.config[channel]['grasp_sequence'][-1][act_kwd]]
+                
+            else:
+                hand_moves['grasp'].append(self.build_pressure_vec(initial, wait_before))
+                hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration))
+
+                grasp_end= grasp
+
+            hand_moves['grasp'].append(self.build_pressure_vec(grasp_end, wait_before+grasp_duration+wait_after))
 
 
         manip_duration = 0.0

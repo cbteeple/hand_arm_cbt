@@ -71,10 +71,10 @@ class pickPlace:
         self.use_tags = rospy.get_param(rospy.get_name()+'/use_tags',True)
         self.save_data = rospy.get_param(rospy.get_name()+'/save_data',False)
         self.use_checklist = rospy.get_param(rospy.get_name()+'/use_checklist',True)
+        self.DEBUG  = rospy.get_param(rospy.get_name()+'/debug',False)
         self.saving_now = False
         self.curr_file = None
         self.curr_rep  = None
-
         
 
         # Read the trajectory configuration file
@@ -90,7 +90,8 @@ class pickPlace:
         self.in_files.sort()
         self.in_files=self.in_files[self.starting_index:]
 
-        print("STARTING AT POSITION: %d"%(self.starting_index))
+        if self.DEBUG:
+            print("STARTING AT POSITION: %d"%(self.starting_index))
 
         config_file =   os.path.join(self.filepath,self.in_files[0])
 
@@ -118,31 +119,38 @@ class pickPlace:
                 #configure the planners based on the config file
                 self.arm_sender.config_planner(os.path.join(filepath_config,'moveit_config.yaml'))
             else:
-                print('Nonstandard arm trajectory space')
+                if self.DEBUG:
+                    print('Nonstandard arm trajectory space')
                 self.arm_sender = None
                 raise
         else:
-            print('Not using arm - Arm moves will be skipped')
+            if self.DEBUG:
+                print('Not using arm - Arm moves will be skipped')
 
         # Create the pneumatic hand object
         if self.use_hand:
             if setup['hand_traj_space'] == 'pressure':
                 self.hand_sender = pneu_traj_sender(self.speed_factor)
             elif setup['hand_traj_space'] == 'robotiq':
-                print("getting for robotiq hand traj server")
+                if self.DEBUG:
+                    print("getting for robotiq hand traj server")
                 self.hand_sender = robotiq_traj_sender(self.speed_factor)
-                print("waiting for robotiq hand traj server")
+                if self.DEBUG:
+                    print("waiting for robotiq hand traj server")
             else:
-                print('Nonstandard hand trajectory space')
+                if self.DEBUG:
+                    print('Nonstandard hand trajectory space')
                 raise
         else:
-            print('Not using hand - Hand moves will be skipped')
+            if self.DEBUG:
+                print('Not using hand - Hand moves will be skipped')
 
         # Create the pneumatic hand object
         if self.use_servo:
                 self.servo_sender = pneu_traj_sender(self.speed_factor, name='servo')
         else:
-            print('Not using servo - Servo moves will be skipped')
+            if self.DEBUG:
+                print('Not using servo - Servo moves will be skipped')
 
 
         if self.save_data:
@@ -179,7 +187,8 @@ class pickPlace:
                         directory_exists = False
 
         if not directory_exists:
-            print('SAVE SETUP: Save directory did not exist. Trying default save directory')
+            if self.DEBUG:
+                print('SAVE SETUP: Save directory did not exist. Trying default save directory')
             data_folder_out = save_config.get('save_folder_default',None)
             if data_folder_out is not None:
                 if not os.path.exists(data_folder_out):
@@ -236,7 +245,8 @@ class pickPlace:
             return response.success
             
         except rospy.ServiceException, e:
-            print "Service call failed: %s"%e
+            if self.DEBUG:
+                print "Service call failed: %s"%e
 
 
     def stop_saving(self):
@@ -251,7 +261,8 @@ class pickPlace:
             self.saving_now = False
             return response.success
         except rospy.ServiceException, e:
-            print "Service call failed: %s"%e
+            if self.DEBUG:
+                print "Service call failed: %s"%e
 
 
 
