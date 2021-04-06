@@ -7,6 +7,8 @@
 <!-- get the arguments from  -->
 <arg name="debug" default="False" doc="Whether debug is on" />
 <arg name="suffix" default="servo" doc="Suffix to add to nodes" />
+<arg name="hw_profile" default="serial_config" doc="The hardware config profile" />
+<arg name="config_package" default="hand_arm" doc="The package where config profiles are stored" />
 
 
 <!-- Load controller settings -->
@@ -16,6 +18,8 @@
     	output="screen">
     	<rosparam file="$(find hand_arm)/config/serial_config_ctrl2.yaml" command="load"/>
       <param name="DEBUG" type="bool" value="$(arg debug)"/>
+      <arg name="hw_profile" value="$(arg hw_profile)"/>
+	    <arg name="config_package" value="$(arg config_package)"/>
     </node>
 
   </group>
