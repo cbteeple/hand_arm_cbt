@@ -131,10 +131,12 @@ class pickPlace:
         if self.use_hand:
             if setup['hand_traj_space'] == 'pressure':
                 self.hand_sender = pneu_traj_sender(self.speed_factor)
+                self.hand_sender.DEBUG=self.DEBUG
             elif setup['hand_traj_space'] == 'robotiq':
                 if self.DEBUG:
                     print("getting for robotiq hand traj server")
                 self.hand_sender = robotiq_traj_sender(self.speed_factor)
+                self.hand_sender.DEBUG=self.DEBUG
                 if self.DEBUG:
                     print("waiting for robotiq hand traj server")
             else:

@@ -1,13 +1,13 @@
 # Channels - turn them on or off
 channels:
     num_channels: 16
-    states: [1,1,1,1, 1,1,1,1, 1,1,0,0, 0,0,0,0]
+    states: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1]
 
 
 # Loop time for outputting data.
 #   This is not strictly enforced, but will always be within 10 ms.
 #   If set to 0ms, the loop wil run as fast as the control loop.
-data_loop_time: 5 #[ms]
+data_loop_time: 50 #[ms]
 
 
 #Set the PID Values.

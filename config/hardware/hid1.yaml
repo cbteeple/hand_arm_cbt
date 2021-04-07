@@ -4,5 +4,5 @@ devices:
     product_id: 1158
     serial_number: 6467390
     num_channels: 8
-    cmd_spec: '2.0'
+    cmd_spec: '2.1'
     cmd_format: '%0.2f'

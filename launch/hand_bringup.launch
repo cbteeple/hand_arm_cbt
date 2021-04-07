@@ -4,7 +4,7 @@
 
 <!-- get the arguments from  -->
 <arg name="profile" default="default" doc="Configuration profile to use" />
-<arg name="debug" default="true" doc="Whether debug is on" />
+<arg name="debug" default="false" doc="Whether debug is on" />
 <arg name="plot_profile" default="2channels" doc="The plotting config profile" />
 
 <arg name="suffix" default="0" doc="Suffix to add to nodes" />
