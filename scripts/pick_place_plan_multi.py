@@ -80,7 +80,7 @@ class pickPlacePlan:
             else:
                 print('Nonstandard arm trajectory space')
                 self.arm_sender = None
-                raise
+                #raise
 
 
     def plan_all(self):
@@ -105,7 +105,11 @@ class pickPlacePlan:
         # build the trajectories
         self.planned_segments = {}
         for segment_name in self.arm_segs:
-            self.planned_segments[segment_name] = self.arm_sender.convert_traj(self.arm_sender.build_traj(self.arm_segs[segment_name]))
+            print(segment_name)
+            if self.arm_sender is None:
+                self.planned_segments[segment_name] = self.arm_segs[segment_name]
+            else:
+                self.planned_segments[segment_name] = self.arm_sender.convert_traj(self.arm_sender.build_traj(self.arm_segs[segment_name]))
 
    
 
@@ -136,7 +140,8 @@ class pickPlacePlan:
       
         with open(out_file, 'w+') as f:
             pickle.dump(self.traj_config, f)
-            #yaml.dump(self.traj_config, f, default_flow_style=None)
+        with open(out_file+'y', 'w+') as f:
+            yaml.dump(self.traj_config, f, default_flow_style=None)
 
            
   

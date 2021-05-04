@@ -136,14 +136,19 @@ class trajSender:
 
     def go_to_start(self, goal, reset_time, blocking=True):
 
+        if type(goal) is type(self.goal_blank):
+            pos = goal.trajectory.points[0].positions
+        else:
+            pos=goal[0]['joints_pos']
+
+
         goal_tmp = copy.deepcopy(self.goal_blank)
-                
         joint_states = rospy.wait_for_message("joint_states", JointState)
-        
         curr_pt = JointTrajectoryPoint(positions=joint_states.position, velocities=[0]*6, time_from_start=rospy.Duration(0.0))
         goal_tmp.trajectory.points.append(curr_pt)
 
-        curr_pt =JointTrajectoryPoint( positions=goal.trajectory.points[0].positions,
+
+        curr_pt =JointTrajectoryPoint( positions=pos,
                                         velocities=[0]*6,
                                         time_from_start=rospy.Duration(reset_time) )
 

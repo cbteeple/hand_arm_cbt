@@ -1,28 +1,21 @@
 <?xml version="1.0"?>
 <launch>
+	<!-- get the arguments from  -->
+	<arg name="profile" default="default" doc="Configuration profile to use" />
+	<arg name="debug" default="false" doc="Whether debug is on" />
+	<arg name="plot_profile" default="2channels" doc="The plotting config profile" />
 
+	<arg name="suffix" default="0" doc="Suffix to add to nodes" />
+	<arg name="hw_profile" default="hid1_config" doc="The hardware config profile" />
+	<arg name="config_package" default="hand_arm" doc="The package where config profiles are stored" />
 
-<!-- get the arguments from  -->
-<arg name="profile" default="default" doc="Configuration profile to use" />
-<arg name="debug" default="false" doc="Whether debug is on" />
-<arg name="plot_profile" default="2channels" doc="The plotting config profile" />
-
-<arg name="suffix" default="0" doc="Suffix to add to nodes" />
-<arg name="hw_profile" default="hid1_config" doc="The hardware config profile" />
-<arg name="config_package" default="hand_arm" doc="The package where config profiles are stored" />
-
-
-
-
-<!-- Bring up the pressure controller -->
-<include file="$(find pressure_controller_ros)/launch/bringup_HID.launch">
-	<arg name="profile" value="$(arg profile)"/>
-	<arg name="debug" value="$(arg debug)"/>
-	<arg name="suffix" value="$(arg suffix)"/>
-	<arg name="plot_profile" value="$(arg plot_profile)"/>
-	<arg name="hw_profile" value="$(arg hw_profile)"/>
-	<arg name="config_package" value="$(arg config_package)"/>
-</include>
-
-
+	<!-- Bring up the pressure controller -->
+	<include file="$(find pressure_controller_ros)/launch/bringup_HID.launch">
+		<arg name="profile" value="$(arg profile)"/>
+		<arg name="debug" value="$(arg debug)"/>
+		<arg name="suffix" value="$(arg suffix)"/>
+		<arg name="plot_profile" value="$(arg plot_profile)"/>
+		<arg name="hw_profile" value="$(arg hw_profile)"/>
+		<arg name="config_package" value="$(arg config_package)"/>
+	</include>
 </launch>
