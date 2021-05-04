@@ -140,8 +140,8 @@ class pickPlacePlan:
       
         with open(out_file, 'w+') as f:
             pickle.dump(self.traj_config, f)
-        with open(out_file+'y', 'w+') as f:
-            yaml.dump(self.traj_config, f, default_flow_style=None)
+        #with open(out_file+'y', 'w+') as f:
+        #    yaml.dump(self.traj_config, f, default_flow_style=None)
 
            
   
