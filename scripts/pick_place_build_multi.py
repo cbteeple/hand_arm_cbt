@@ -147,6 +147,7 @@ class pickPlaceBuild:
                     for idx, axis in enumerate(curr_config['arm']['grasp_pose']['position']):
                         curr_config['arm']['grasp_pose']['position'][idx] = axis + entry[idx]
 
+
                 if shift_release_pose:
                     if isinstance(curr_config['arm']['release_pose'], list):
                         for row_idx, row in enumerate(curr_config['arm']['release_pose']):
@@ -270,8 +271,14 @@ class pickPlaceBuild:
         
         ops.append({'arm': 'move', 'hand': False, 'servo': False})
 
+        if self.config['arm']['pickup']['type'] == 'to_pose':
+            ops.append({'arm': 'manip_before', 'hand': False, 'servo': False})
+
         if self.config['hand'].get('manip_sequence',False):
             ops.append({'arm': False, 'hand': 'manip', 'servo': False})
+        
+        if self.config['arm']['pickup']['type'] == 'to_pose':
+            ops.append({'arm': 'manip_after', 'hand': False, 'servo': False})
 
         release_when = self.config['hand'].get('release_start','after')
         release_servo = self.config.get('servo',{'release_start':'after'})
@@ -321,12 +328,23 @@ class pickPlaceBuild:
                     item['hand'] = 'release'
 
             ops.extend(rel_move_inv)
+
+            if self.config['arm']['pickup']['type'] == 'to_pose':
+                ops.append({'arm': 'manip_after_inv', 'hand': False, 'servo': False})
+
+            if self.config['hand'].get('manip_sequence',False):
+                ops.append({'arm': False, 'hand': 'manip', 'servo': False})
+                
+            if self.config['arm']['pickup']['type'] == 'to_pose':
+                ops.append({'arm': 'manip_before_inv', 'hand': False, 'servo': False})
+
             ops.append({'arm': 'move_inv', 'hand': False, 'servo': False})
+            
             ops.extend(grasping_move_inv)
 
             ops.append({'arm': 'pre_inv', 'hand': 'startup', 'servo': 'startup'})
 
-        print(ops)
+        #print(ops)
 
 
 
@@ -582,6 +600,36 @@ class pickPlaceBuild:
                                 above_grasp,
                                 release_start ]
 
+        elif pickup['type'] == 'to_pose':
+            poses = pickup.get('pose', None)
+
+            if isinstance(poses, dict):
+                pose_to_use_before = poses['before']
+                pose_to_use_after =  poses['after']
+            elif pose is not None:
+                pose_to_use_before = poses
+                pose_to_use_after =  poses
+
+            # Get the manip pose and turn it into a list if needed
+            print(pose_to_use_before)
+            print(pose_to_use_after)
+            manip_pose_before = config['arm'][pose_to_use_before]
+            manip_pose_after = config['arm'][pose_to_use_after]
+            if not isinstance(manip_pose_before, list):
+                manip_pose_before = [manip_pose_before]
+            if not isinstance(manip_pose_after, list):
+                manip_pose_after = [manip_pose_after]
+
+            arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
+                                 copy.deepcopy(grasp_end_pose) ]
+
+            arm_moves['manip_before'] = [copy.deepcopy(grasp_end_pose)]
+            arm_moves['manip_before'].extend(copy.deepcopy(manip_pose_before))
+            arm_moves['manip_after'] =  copy.deepcopy([manip_pose_before[-1]])
+            arm_moves['manip_after'].extend(copy.deepcopy(manip_pose_after))
+            arm_moves['manip_after'].append(copy.deepcopy(release_start))
+
+
         else:
             print('Pickup type not implemented yet: Doing square instead')
 
@@ -605,6 +653,12 @@ class pickPlaceBuild:
         if self.reset_object:
             arm_moves['release_move_inv'] = copy.deepcopy(list(reversed(arm_moves['release_move'])))
             arm_moves['move_inv'] = copy.deepcopy(list(reversed(arm_moves['move'])))
+
+            if arm_moves.get('manip_before'):
+                arm_moves['manip_before_inv'] = copy.deepcopy(list(reversed(arm_moves['manip_before'])))
+                arm_moves['manip_after_inv'] = copy.deepcopy(list(reversed(arm_moves['manip_after'])))
+
+
             arm_moves['grasp_move_inv'] = copy.deepcopy(list(reversed(arm_moves['grasp_move'])))
             arm_moves['pre_inv'] = copy.deepcopy(list(reversed(arm_moves['pre'])))
             arm_moves['post_inv'] = copy.deepcopy(list(reversed(arm_moves['post'])))
@@ -614,6 +668,7 @@ class pickPlaceBuild:
         if orientation_type is not None:
             for key in arm_moves:
                 curr_move = arm_moves[key]
+                print(key)
                 for entry in curr_move:
                     if len(entry['orientation'])==3:
                         if orientation_type == 'degrees':
@@ -630,8 +685,9 @@ class pickPlaceBuild:
     def validate_pickup(self, pickup):
         ok=True
 
-        if pickup['percent'] >1 or pickup['percent'] <0:
-            ok = False
+        if pickup.get('percent', None) is not None:
+            if pickup['percent'] >1 or pickup['percent'] <0:
+                ok = False
 
         return ok
         

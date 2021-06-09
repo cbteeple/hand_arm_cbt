@@ -21,6 +21,7 @@ import actionlib
 from control_msgs.msg import *
 from trajectory_msgs.msg import *
 from sensor_msgs.msg import JointState
+from moveit_msgs.msg import DisplayTrajectory, RobotState, RobotTrajectory
 from math import pi
 import yaml
 import os
@@ -53,6 +54,11 @@ class trajSender:
         self.goal_blank = FollowJointTrajectoryGoal()
         self.goal_blank.trajectory = JointTrajectory()
         self.get_joint_names(joint_names)
+
+        self.display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path',
+                                                                                                     DisplayTrajectory,
+                                                                                                     queue_size=20)
+        
 
         
 
@@ -173,6 +179,31 @@ class trajSender:
         self.traj_client.send_goal(goal_stop)
 
 
+
+    def display_trajectory(self, plan):
+        print(plan)
+        traj = plan.trajectory
+        joints = traj.joint_names 
+        print(traj)
+
+        init_joints = JointState()
+        init_joints.name = joints
+        init_joints.position = traj.points[0].positions
+        init_joints.velocity = traj.points[0].velocities
+        init_joints.effort = traj.points[0].effort
+
+        joint_traj = RobotTrajectory()
+        joint_traj.joint_trajectory = plan.trajectory
+
+        init_state = RobotState()
+        init_state.joint_state = init_joints
+
+        display_trajectory = DisplayTrajectory()
+        display_trajectory.trajectory_start = init_state
+        display_trajectory.trajectory.append(joint_traj)
+        # Publish
+        self.display_trajectory_publisher.publish(display_trajectory)
+        rospy.sleep(3)
 
 
 
