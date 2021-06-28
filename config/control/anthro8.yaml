@@ -19,7 +19,7 @@ PID:
     values: [0.09, 1.5, 0] #[0.1000, 0.0010, 0.0010]
 
 # Valve PWM offsets (set between 0 and 255 for the source and vent valves)
-valve_offsets: [[229, 229], [228, 235], [232, 231], [230, 235], [229, 229], [216, 213], [221, 220], [224, 224]]
+valve_offsets: [[224, 226], [224, 235], [228, 228], [224, 229], [217, 232], [215, 216], [218, 212], [213, 226]]
     
 # Set the max and min pressures in software [psi]
 #   If single value, then it will be set for all channels

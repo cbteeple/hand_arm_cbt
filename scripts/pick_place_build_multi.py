@@ -334,7 +334,7 @@ class pickPlaceBuild:
 
             if self.config['hand'].get('manip_sequence',False):
                 ops.append({'arm': False, 'hand': 'manip', 'servo': False})
-                
+
             if self.config['arm']['pickup']['type'] == 'to_pose':
                 ops.append({'arm': 'manip_before_inv', 'hand': False, 'servo': False})
 
@@ -567,41 +567,49 @@ class pickPlaceBuild:
 
         pickup = config['arm'].get('pickup', None)
 
-        if pickup is None:
-            pickup = {}
-            pickup['height']  = config['arm']['pickup_height']
-            pickup['type']    = config['arm']['pickup_type']
-            pickup['percent'] = config['arm']['pickup_percent']
+        # Package args if they are defined inline (for backward compatibillity)
+        if pickup.get('args', None) is None:
+            pickup['args']={}
+            for key in pickup:
+                if key=='type':
+                    continue
+                else:
+                    pickup['args'][key] = copy.deepcopy(pickup[key])
+                    #del pickup[key]
 
+        # Check if the pickup is reasonable
         if not self.validate_pickup(pickup):
             return
         
+        # Generate a "square" pickup sequence
         if pickup['type'] == 'square':
             above_grasp = copy.deepcopy(grasp_end_pose)
-            above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
+            above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
 
             above_release = copy.deepcopy(release_start)
-            above_release['position'][2] = above_release['position'][2] + pickup['height']
+            above_release['position'][2] = above_release['position'][2] + pickup['args']['height']
 
             arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
                                 above_grasp,
                                 above_release,
                                 release_start]
 
+        # Generate a "triangle" pickup sequence
         elif pickup['type'] == 'triangle':
             above_grasp = copy.deepcopy(grasp_end_pose)
             above_release = copy.deepcopy(release_start)
             for axis_idx, item in enumerate(above_grasp['position']):
-                above_grasp['position'][axis_idx] = ((1-pickup['percent'])*above_grasp['position'][axis_idx] + (pickup['percent'])*above_release['position'][axis_idx])
+                above_grasp['position'][axis_idx] = ((1-pickup['args']['percent'])*above_grasp['position'][axis_idx] + (pickup['args']['percent'])*above_release['position'][axis_idx])
 
-            above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
+            above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
 
             arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
                                 above_grasp,
                                 release_start ]
 
+        # Generate a "to-pose" sequence
         elif pickup['type'] == 'to_pose':
-            poses = pickup.get('pose', None)
+            poses = pickup.get('args', None)
 
             if isinstance(poses, dict):
                 pose_to_use_before = poses['before']
@@ -634,10 +642,10 @@ class pickPlaceBuild:
             print('Pickup type not implemented yet: Doing square instead')
 
             above_grasp = copy.deepcopy(grasp_end_pose)
-            above_grasp['position'][2] = above_grasp['position'][2] + pickup['height']
+            above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
 
             above_release = copy.deepcopy(release_start)
-            above_release['position'][2] = above_release['position'][2] + pickup['height']
+            above_release['position'][2] = above_release['position'][2] + pickup['args']['height']
 
             arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
                                 above_grasp,
@@ -682,11 +690,12 @@ class pickPlaceBuild:
         self.trajectory_built['arm'] = arm_moves
 
 
+    # Validate a pickup definition
     def validate_pickup(self, pickup):
         ok=True
 
         if pickup.get('percent', None) is not None:
-            if pickup['percent'] >1 or pickup['percent'] <0:
+            if pickup['args']['percent'] >1 or pickup['args']['percent'] <0:
                 ok = False
 
         return ok
