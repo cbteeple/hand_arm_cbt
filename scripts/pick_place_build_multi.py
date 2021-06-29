@@ -26,6 +26,8 @@ import numpy as np
 import copy
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
+from pressure_controller_skills.build_skills import SkillBuilder
+
 
 
 
@@ -67,6 +69,8 @@ class pickPlaceBuild:
         self.max_p = self.config['hand'].get("max_pressure", np.inf)
         self.min_p  = self.config['hand'].get("min_pressure", -np.inf)
         self.hand_type=self.config['hand'].get('type','pressure_controlled')
+
+        self.skill_builder = SkillBuilder()
 
 
 
@@ -397,6 +401,8 @@ class pickPlaceBuild:
             grasp_end= grasp
 
         else:
+            # Build the grasping move
+            # TODO: Integrate skill builder option here with prefix/suffix
             hand_moves['grasp']= [self.build_pressure_vec(initial, 0.0)]
 
             if self.config[channel].get('grasp_sequence',False):
@@ -416,7 +422,8 @@ class pickPlaceBuild:
 
             hand_moves['grasp'].append(self.build_pressure_vec(grasp_end, wait_before+grasp_duration+wait_after))
 
-
+        # Build the manipulation move
+        # TODO: Integrate skill builder option here with prefix/suffix
         manip_duration = 0.0
         if self.config[channel].get('manip_sequence',False):
             num_reps=int(self.config[channel].get('manip_repeat',1))
@@ -439,6 +446,9 @@ class pickPlaceBuild:
         grasp_duration = self.config[channel].get('release_time',0.0)
         wait_after  = self.config[channel].get('wait_after_release',0.0)
 
+        # Build the release move
+        # TODO: Integrate skill builder option here with prefix/suffix
+
         hand_moves['release']= [self.build_pressure_vec(grasp_end, 0.0), 
                                 self.build_pressure_vec(grasp_end, wait_before),
                                 self.build_pressure_vec(idle, wait_before+grasp_duration), 
@@ -455,6 +465,10 @@ class pickPlaceBuild:
                                 self.build_pressure_vec(grasp_end, wait_before+grasp_duration),
                                 self.build_pressure_vec(grasp_end, wait_before+grasp_duration+wait_after)]
 
+
+            # Invert the moves
+            # TODO: figure out how to correctly invert the times for arbitrary move sequences
+
             end_time = hand_moves['grasp'][-1][0]
             grasp_inv = copy.deepcopy(list(reversed(hand_moves['grasp'])))
             for waypoint in grasp_inv:
@@ -468,7 +482,13 @@ class pickPlaceBuild:
 
         self.trajectory_built[channel] = hand_moves
 
-    
+
+    # Build skills
+    # TODO: implement the build skills method
+    # TODO: document the skill interface in the documentation 
+    def build_skills(self):
+        pass
+
 
     def build_pressure_vec(self,pressures, time):      
         # Coerce pressures
