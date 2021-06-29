@@ -1,3 +1,8 @@
+# ROS node settings
+traj_server_rate: 20 # Should be < 40 Hz for serial comms
+data_channel: "servo"
+use_traj_server: True
+
 # Serial device info
 devices:
   - devname: /dev/ttyACM0
