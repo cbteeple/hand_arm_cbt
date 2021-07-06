@@ -1,0 +1,80 @@
+context:
+  - anthro8
+  - anthro8mixed
+
+variables:
+  idle_pressure: -5     #[psi]
+  grasp_pressure: 20    #[psi]
+  twist_offset: 5       #[psi]
+
+postures:
+  idle:
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+  
+  grasp4:
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+
+  rotneg:
+    - "grasp_pressure+twist_offset"
+    - "grasp_pressure-twist_offset"
+    - "grasp_pressure+twist_offset"
+    - "grasp_pressure-twist_offset"
+    - "grasp_pressure+twist_offset"
+    - "grasp_pressure-twist_offset"
+    - "grasp_pressure+twist_offset"
+    - "grasp_pressure-twist_offset"
+
+  rotpos:
+    - "grasp_pressure-twist_offset"
+    - "grasp_pressure+twist_offset"
+    - "grasp_pressure-twist_offset"
+    - "grasp_pressure+twist_offset"
+    - "grasp_pressure-twist_offset"
+    - "grasp_pressure+twist_offset"
+    - "grasp_pressure-twist_offset"
+    - "grasp_pressure+twist_offset"
+
+skill:
+  settings:
+    default_times:
+      prefix: 1.0 #[sec]
+      main:   4.0 #[sec]
+      suffix: 1.0 #[sec]
+
+    main_repeat: 4
+    
+  prefix:
+    - time: 0.0
+      posture: idle
+    - time: 1.0
+      posture: grasp4
+
+  main:
+    - time: 0.0
+      posture: grasp4
+    - time: 0.25
+      posture: rotneg
+    - time: 0.75
+      posture: rotpos
+    - time: 1.0
+      posture: grasp4
+
+  suffix:
+    - time: 0.0
+      posture: grasp4
+    - time: 1.0
+      posture: idle
