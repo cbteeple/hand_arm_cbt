@@ -1,0 +1,96 @@
+settings:
+  boomerang: true
+  reset_object: true
+  type: grid # options: single, grid
+  use_arm: True
+  use_hand: True
+
+  # Ignore arm settings. They are unused.
+arm:
+  initial_pose:
+    position: [0.55, 0.30, 0.20]
+    orientation: [0, 0.70710678118, 0, 0.70710678118]
+
+  grasp_pose:
+    - position: [0.55, 0.30, 0.20]
+      orientation: [0, 0.70710678118, 0, 0.70710678118]
+    - position: [0.55, 0.30, 0.020]
+      orientation: [0, 0.70710678118, 0, 0.70710678118]
+
+  release_pose:
+    position: [0.15, 0.55, 0.020]
+    orientation: [0, 0.70710678118, 0, 0.70710678118]
+
+  final_pose:
+    position: [0.15, 0.55, 0.20]
+    orientation: [0, 0.70710678118, 0, 0.70710678118]
+
+
+  pickup:
+    type: square
+    args:
+      height: 0.10 #[meters]
+      percent: 0.5
+
+  grid:
+    # Number of points on each side [number] in (x, y, z) order
+    num_pts: [1,1,1]  #to make cm-spaced grid points add one (for example, 0.20/0.01 = 20 segments, with 21 points total)
+
+    # Dimension of each grid side [meters] in (x, y, z) order
+    dims: [0,0,0]
+    release_dims: [0,0,0]
+
+    # Basis shifting (maybe you don't want the ref frame to be the robot's home frame)
+    # Use quaternions?
+    basis: []
+
+    affects_release_pose: True
+
+
+
+hand:
+  num_channels: 8
+  max_pressure: 35
+  min_pressure: -50
+
+  initial_pressure: [-5,-5,  -5,-5,    -5,-5,    -5,-5]  #[psi]
+  idle_pressure:    [-5,-5,  -5,-5,    -5,-5,    -5,-5]  #[psi]
+
+  half_grasp:    [5,5,  5,5,    5,5,    5,5]  #[psi]
+  half_grasp2:    [0,0,  0,0,    0,0,    0,0]  #[psi]
+
+  grasp_pressure:   [20.0, 20.0, 20, 20, 20.0, 20.0, 20, 20] #[psi]
+
+  manip_task_pressure: [25, 10,   25, 10,   25, 10,   25, 10]
+  manip_release_pressure: [10, -5,   10, -5,   10, -5,   10, -5]
+
+  manip_task_pressure2: [15, -2, 5, -2, 15, -2, 5, -2]
+
+
+  grasp_sequence:
+  - time: 0.0
+    pressure: initial_pressure
+  - time: 1.5
+    pressure: half_grasp
+  - time: 2.0
+    pressure: grasp_pressure
+
+
+  #manip_sequence:
+
+  #manip_repeat: 3.0
+
+  # Decide when to start the grasp compared to when the arm moves.
+  grasp_start: "after" #options: "after", "during"
+
+  wait_before_grasp: 0.0    #[sec]
+  grasp_time: 0.2    #[sec]
+  wait_after_grasp: 0.0    #[sec]
+
+  
+  release_start: "after" #options: "after", "during"
+  wait_before_release: 0.0
+  release_time: 1.0  #[sec]
+  wait_after_release: 0.5    #[s
+
+

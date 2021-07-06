@@ -1,0 +1,222 @@
+settings:
+  boomerang: true
+  reset_object: true
+  type: grid # options: single, grid
+  use_arm: True
+  use_hand: True
+
+  # Ignore arm settings. They are unused.
+arm:
+  orientation_type: 'degrees' # options: 'quaterions', 'radians, 'degrees'
+
+  initial_pose:
+    position: [0.55, 0.30, 0.20]
+    orientation: [0,90,0]
+
+  grasp_pose:
+    - position: [0.55, 0.30, 0.20]
+      orientation: [0,90,0]
+    - position: [0.55, 0.30, 0.005]
+      orientation: [0,90,0]
+
+  manip_pose_before:
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, 45,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, 0,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, -45,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, -90,0]
+
+  manip_pose_after:
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, -90,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, -45,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, 0,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, 45,0]
+
+  release_pose:
+    position: [0.15, 0.55, 0.005]
+    orientation: [0,90,0]
+
+  final_pose:
+    position: [0.15, 0.55, 0.20]
+    orientation: [0,90,0]
+
+
+  pickup:
+    type: to_pose # square, triangle, to_pose
+    args:
+      before: 'manip_pose_before'
+      after: 'manip_pose_after'
+
+  grid:
+    # Number of points on each side [number] in (x, y, z) order
+    num_pts: [1,1,1]  #to make cm-spaced grid points add one (for example, 0.20/0.01 = 20 segments, with 21 points total)
+
+    # Dimension of each grid side [meters] in (x, y, z) order
+    dims: [0,0,0]
+    release_dims: [0,0,0]
+
+    # Basis shifting (maybe you don't want the ref frame to be the robot's home frame)
+    # Use quaternions?
+    basis: []
+
+    affects_release_pose: True
+
+
+
+hand:
+  num_channels: 8
+  max_pressure: 35
+  min_pressure: -50
+
+  initial_pressure: [-5,-5,  -5,-5,    -5,-5,    -5,-5]  #[psi]
+  idle_pressure:    [-5,-5,  -5,-5,    -5,-5,    -5,-5]  #[psi]
+
+  half_grasp:    [5,5,  5,5,    5,5,    5,5]  #[psi]
+  half_grasp2:    [0,0,  0,0,    0,0,    0,0]  #[psi]
+
+  grasp_pressure:   [27.0, 27.0, 27,27, 27.0, 27.0, 27,27] #[psi]
+
+  manip_task_pressure:  [25.0, 15.0,   25, 15,   25.0, 15.0,   25, 15] 
+  manip_task_pressure_2:  [15.0,   25, 15,   25.0, 15.0,   25, 15, 25.0] 
+  #manip_task_pressure: [25, 10,   25, 10,   25, 10,   25, 10]
+  #manip_task_pressure_2: [10,   25, 10,   25, 10,   25, 10, 25]
+  manip_release_pressure: [10, -5,   10, -5,   10, -5,   10, -5]
+
+  manip_gait_1a:  [20.0, 20.0, -5, -5, 20.0, 20.0, -5, -5] 
+  manip_gait_1b:  [25.0, 15.0,   -5, -5,   25.0, 15.0,   -5, -5] 
+  manip_gait_1c:  [25.0, 15.0,   20.0, 20.0,   25.0, 15.0,   20.0, 20.0] 
+  manip_gait_1d:  [10.0, -5.0,   20.0, 20.0,   10.0, -5.0,   20.0, 20.0] 
+  manip_gait_2a:  [-5, -5, 20.0, 20.0, -5, -5, 20.0, 20.0] 
+  manip_gait_2b:  [-5, -5,   25.0, 15.0,   -5, -5, 25.0, 15.0] 
+  manip_gait_2c:  [20.0, 20.0,   25.0, 15.0,   20.0, 20.0, 25.0, 15.0] 
+  manip_gait_2d:  [20.0, 20.0,   10.0, -5.0,   20.0, 20.0, 10.0, -5.0]
+
+
+
+  grasp_sequence:
+    type: 'skill'
+    sequence:
+      - skill: 'simple/grasp4finger'
+        vars:  {grasp_pressure: 18 }
+        times: {main: 1.0}
+        main_repeat: 1
+
+  # Decide when to start the grasp compared to when the arm moves.
+  grasp_start: "during" #options: "after", "during"
+  wait_before_grasp: 1.0    #[sec]
+  wait_after_grasp: 0.0    #[sec]
+  #grasp_time: 0.2    #[sec]
+ 
+
+  manip_sequence:
+    type: 'skill'
+    sequence:
+      - skill: 'rotate4finger/rotate4finger'
+        vars:  {grasp_pressure: 18, twist_offset: 2 }
+        times: {main: 3.0, prefix: 0, suffix: 0}
+        main_repeat: 2
+        
+      - skill: 'rotate4finger/rotate4finger'
+        vars:  {grasp_pressure: 18, twist_offset: 5 }
+        times: {main: 3.0, prefix: 0, suffix: 0}
+        main_repeat: 2
+
+      - skill: 'rotate4finger/rotate4finger'
+        vars:  {grasp_pressure: 18, twist_offset: 8 }
+        times: {main: 3.0, prefix: 0, suffix: 0}
+        main_repeat: 2
+
+
+  release_sequence:
+    type: 'skill'
+    sequence:
+      - skill: 'simple/release4finger'
+        vars:  {grasp_pressure: 18 }
+        times: {main: 1.0}
+        main_repeat: 1
+      - skill: 'simple/idle'
+        vars:  {}
+        times: {main: 1.0}
+        main_repeat: 1
+
+  release_start: "after" #options: "after", "during"
+  wait_before_release: 0.0
+  wait_after_release: 0.0    #[s
+  #release_time: 1.0  #[sec]
+
+  # manip_sequence:
+  #   - time: 0.0
+  #     pressure: grasp_pressure
+  #   - time: 1.0
+  #     pressure: initial_pressure
+  #   - time: 2.5
+  #     pressure: manip_gait_1a
+  #   - time: 3.0
+  #     pressure: manip_gait_1b
+  #   - time: 3.5
+  #     pressure: manip_gait_1c
+  #   - time: 4.0
+  #     pressure: manip_gait_1d
+  #   - time: 4.5
+  #     pressure: manip_gait_2a
+  #   - time: 5.0
+  #     pressure: manip_gait_2b
+  #   - time: 5.5
+  #     pressure: manip_gait_2c
+  #   - time: 6.0
+  #     pressure: manip_gait_2d
+  #   - time: 7.0
+  #     pressure: manip_gait_1a
+  #   - time: 7.5
+  #     pressure: manip_gait_1b
+  #   - time: 8.0
+  #     pressure: manip_gait_1c
+  #   - time: 8.5
+  #     pressure: manip_gait_1d
+  #   - time: 9.0
+  #     pressure: manip_gait_2a
+  #   - time: 9.5
+  #     pressure: manip_gait_2b
+  #   - time: 10.0
+  #     pressure: manip_gait_2c
+  #   - time: 10.5
+  #     pressure: manip_gait_2d
+  #   - time: 11.0
+  #     pressure: manip_gait_1a
+  #   - time: 12.0
+  #     pressure: grasp_pressure
+  #   - time: 12.5
+  #     pressure: grasp_pressure
+
+  # manip_sequence:
+  #   - time: 0.0
+  #     pressure: grasp_pressure
+  #   - time: 1.0
+  #     pressure: manip_task_pressure
+  #   - time: 1.5
+  #     pressure: manip_task_pressure_2
+  #   - time: 2.0
+  #     pressure: manip_task_pressure
+  #   - time: 2.5
+  #     pressure: manip_task_pressure_2
+  #   - time: 3.0
+  #     pressure: manip_task_pressure
+  #   - time: 3.5
+  #     pressure: manip_task_pressure_2
+  #   - time: 4.0
+  #     pressure: manip_task_pressure
+  #   - time: 4.5
+  #     pressure: manip_task_pressure_2
+  #   - time: 5.5
+  #     pressure: grasp_pressure
+
+  # manip_repeat: 1.0
+
+

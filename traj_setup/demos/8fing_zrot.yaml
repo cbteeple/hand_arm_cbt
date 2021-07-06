@@ -1,0 +1,95 @@
+settings:
+  boomerang: true
+  type: grid # options: single, grid
+  use_arm: False
+  use_hand: True
+
+  # Ignore arm settings. They are unused.
+arm:
+  initial_pose:
+    position: [0.40, 0.20, 0.6]
+    orientation: [-0.6532815, 0.2705981, 0.6532815, 0.2705981]
+
+  grasp_pose:
+    position: [0.40, 0.20, 0.6]
+    orientation: [-0.6532815, 0.2705981, 0.6532815, 0.2705981]
+
+  release_pose:
+    position: [0.40, 0.20, 0.6]
+    orientation: [-0.6532815, 0.2705981, 0.6532815, 0.2705981]
+
+  final_pose:
+    position: [0.40, 0.20, 0.6]
+    orientation: [-0.6532815, 0.2705981, 0.6532815, 0.2705981]
+
+
+  pickup:
+    type: square
+    args:
+      height: 0.15 #[meters]
+      percent: 0.2
+
+  grid:
+    # Number of points on each side [number] in (x, y, z) order
+    num_pts: [1,1,1]  #to make cm-spaced grid points add one (for example, 0.20/0.01 = 20 segments, with 21 points total)
+
+    # Dimension of each grid side [meters] in (x, y, z) order
+    dims: [0,0,0]
+
+    # Basis shifting (maybe you don't want the ref frame to be the robot's home frame)
+    # Use quaternions?
+    basis: []
+
+    affects_release_pose: False
+
+
+
+hand:
+  num_channels: 16
+  max_pressure: 35
+  min_pressure: -50
+
+  initial_pressure: [-5,-5,  -5,-5,    -5,-5,    -5,-5,   -5,-5,  -5,-5,    -5,-5,    -5,-5]  #[psi]
+  idle_pressure:    [-5,-5,  -5,-5,    -5,-5,    -5,-5,   -5,-5,  -5,-5,    -5,-5,    -5,-5]  #[psi]
+
+  grasp_pressure:   [15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0]
+
+  manip_task_pressure: [27.307692307692307, 2.6923076923076916, 27.307692307692307, 2.6923076923076916,
+      27.307692307692307, 2.6923076923076916, 27.307692307692307, 2.6923076923076916,
+      27.307692307692307, 2.6923076923076916, 27.307692307692307, 2.6923076923076916,
+      27.307692307692307, 2.6923076923076916, 27.307692307692307, 2.6923076923076916]
+
+
+  grasp_sequence:
+  - time: 0.0
+    pressure: initial_pressure
+  - time: 2.0
+    pressure: grasp_pressure
+  - time: 3.0
+    pressure: grasp_pressure
+
+
+  manip_sequence:
+  - time: 0.0
+    pressure: grasp_pressure
+  - time: 1.0
+    pressure: manip_task_pressure
+  - time: 2.0
+    pressure: manip_task_pressure
+  - time: 3.0
+    pressure: grasp_pressure
+  - time: 4.0
+    pressure: grasp_pressure
+
+  manip_repeat: 4.0
+
+  # Decide when to start the grasp compared to when the arm moves.
+  grasp_start: "after" #options: "after", "during"
+
+  wait_before_grasp: 0.0    #[sec]
+  grasp_time: 0.2    #[sec]
+  wait_after_grasp: 0.0    #[sec]
+
+  wait_before_release: 0.0
+  release_time: 2.0  #[sec]
+  wait_after_release: 1.0    #[s
