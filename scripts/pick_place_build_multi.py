@@ -370,6 +370,10 @@ class pickPlaceBuild:
         hand_moves = {}
 
 
+        wait_before = self.config[channel].get('wait_before_grasp',0.0)
+        grasp_duration = self.config[channel].get('grasp_time',0.0)
+        wait_after  = self.config[channel].get('wait_after_grasp',0.0)
+
         if 'robotiq' in self.hand_type:
             self.keylist = ['pos','speed','force']
             idle  = self.config[channel]['idle_pos']
@@ -377,28 +381,18 @@ class pickPlaceBuild:
             initial = self.config[channel].get('initial_pos')
             act_kwd = 'pos'
 
-
-        else:
-            idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]
-            grasp = [ float(x) for x in self.config[channel]['grasp_pressure'] ]
-            initial = [ float(x) for x in self.config[channel].get('initial_pressure',idle) ]
-            act_kwd = 'pressure'
-
-
-        wait_before = self.config[channel].get('wait_before_grasp',0.0)
-        grasp_duration = self.config[channel].get('grasp_time',0.0)
-        wait_after  = self.config[channel].get('wait_after_grasp',0.0)
-
-
-        if 'robotiq' in self.hand_type:
             hand_moves['grasp']= []
             if wait_before>0.0:
                 hand_moves['grasp'].append(self.build_pressure_vec(initial, 0.0))
             hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration))
             hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration+wait_after))
             grasp_end= grasp
-
+        
         else:
+            act_kwd = 'pressure'
+            
+
+        if 'robotiq' not in self.hand_type:
             # Build the grasping move
             grasp_sequence = self.config[channel].get('grasp_sequence',None)
 
@@ -436,6 +430,10 @@ class pickPlaceBuild:
                 
                 
             else:
+                idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]
+                grasp = [ float(x) for x in self.config[channel]['grasp_pressure'] ]
+                initial = [ float(x) for x in self.config[channel].get('initial_pressure',idle) ]
+
                 hand_moves['grasp']= [self.build_pressure_vec(initial, 0.0)]
                 hand_moves['grasp'].append(self.build_pressure_vec(initial, wait_before))
                 hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration))
@@ -512,12 +510,16 @@ class pickPlaceBuild:
                         
 
         else:
+            idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]           
+
             hand_moves['release']= [self.build_pressure_vec(grasp_end, 0.0), 
                                     self.build_pressure_vec(grasp_end, wait_before),
                                     self.build_pressure_vec(idle, wait_before+grasp_duration), 
                                     self.build_pressure_vec(idle, wait_before+grasp_duration+wait_after)]
 
         # Build the startup move
+        idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]  
+        initial = [ float(x) for x in self.config[channel].get('initial_pressure',idle) ]
         hand_moves['startup'] = [self.build_pressure_vec(initial, 0.0), 
                                  self.build_pressure_vec(initial, 0.0)]
 
