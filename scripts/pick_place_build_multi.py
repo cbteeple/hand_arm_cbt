@@ -70,7 +70,8 @@ class pickPlaceBuild:
         self.min_p  = self.config['hand'].get("min_pressure", -np.inf)
         self.hand_type=self.config['hand'].get('type','pressure_controlled')
 
-        self.skill_builder = SkillBuilder()
+        skill_context = rospy.get_param('/config_node/profile_name')
+        self.skill_builder = SkillBuilder(context=skill_context,skill_package='hand_arm', skill_folder='hand_skills')
 
 
 
@@ -346,12 +347,9 @@ class pickPlaceBuild:
             
             ops.extend(grasping_move_inv)
 
-            ops.append({'arm': 'pre_inv', 'hand': 'startup', 'servo': 'startup'})
+            ops.append({'arm': 'pre_inv', 'hand': 'startup_inv', 'servo': 'startup'})
 
         #print(ops)
-
-
-
 
         self.trajectory_built['sequence'] = sequence
 
@@ -402,44 +400,85 @@ class pickPlaceBuild:
 
         else:
             # Build the grasping move
-            # TODO: Integrate skill builder option here with prefix/suffix
-            hand_moves['grasp']= [self.build_pressure_vec(initial, 0.0)]
+            grasp_sequence = self.config[channel].get('grasp_sequence',None)
 
-            if self.config[channel].get('grasp_sequence',False):
-                grasp_duration = self.config[channel]['grasp_sequence'][-1]['time']
+            if grasp_sequence is not None:
+                grasp_type=grasp_sequence.get('type', None)
 
-                for row in self.config[channel]['grasp_sequence']:
-                    new_row = self.config[channel][row[act_kwd]]
-                    hand_moves['grasp'].append(self.build_pressure_vec(new_row, wait_before+row['time']))
+                if grasp_type == 'skill':
+                    grasp_skills = grasp_sequence.get('sequence', [])
 
-                grasp_end= self.config[channel][self.config[channel]['grasp_sequence'][-1][act_kwd]]
+                    if len(grasp_skills)>0:
+                        grasp_traj = self.build_skill_sequence(grasp_skills)
+
+                        if wait_before >0:
+                            hand_moves['grasp'] =  [self.build_pressure_vec(grasp_traj[0]['pressure'], grasp_traj[0]['time'])]
+                            grasp_traj = self.skill_builder.adjust_points(grasp_traj,wait_before)
+                        
+                        else:
+                            hand_moves['grasp'] =  []
+                        
+                        # Convert trajectory to correct format
+                        for row in grasp_traj:
+                            hand_moves['grasp'].append(self.build_pressure_vec(row['pressure'], row['time']))
+
+                        grasp_duration = grasp_traj[-1]['time']
+                        grasp_end      = grasp_traj[-1]['pressure']                           
+
+                else:
+                    grasp_duration = self.config[channel]['grasp_sequence'][-1]['time']
+
+                    for row in self.config[channel]['grasp_sequence']:
+                        new_row = self.config[channel][row[act_kwd]]
+                        hand_moves['grasp'].append(self.build_pressure_vec(new_row, wait_before+row['time']))
+
+                    grasp_end= self.config[channel][self.config[channel]['grasp_sequence'][-1][act_kwd]]
+                
                 
             else:
+                hand_moves['grasp']= [self.build_pressure_vec(initial, 0.0)]
                 hand_moves['grasp'].append(self.build_pressure_vec(initial, wait_before))
                 hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration))
 
                 grasp_end= grasp
 
-            hand_moves['grasp'].append(self.build_pressure_vec(grasp_end, wait_before+grasp_duration+wait_after))
+            if wait_after >0:
+                hand_moves['grasp'].append(self.build_pressure_vec(grasp_end, wait_before+grasp_duration+wait_after))
 
         # Build the manipulation move
-        # TODO: Integrate skill builder option here with prefix/suffix
+        manip_sequence = self.config[channel].get('manip_sequence',None)
+
         manip_duration = 0.0
-        if self.config[channel].get('manip_sequence',False):
-            num_reps=int(self.config[channel].get('manip_repeat',1))
-
-            manip_duration = self.config[channel]['manip_sequence'][-1]['time']
-
-            first_point = self.config[channel]['manip_sequence'][0]
-            self.config[channel]['manip_sequence'].pop(0)
-
+        if manip_sequence is not None:
+            manip_type=manip_sequence.get('type', None)
             hand_moves['manip'] = []
-            hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][first_point[act_kwd]], first_point['time']))
-            for rep in range(num_reps):
-                for row in self.config[channel]['manip_sequence']:
-                    hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][row[act_kwd]], rep*manip_duration+row['time']))    
 
-            grasp_end = self.config[channel][row[act_kwd]]  
+            if manip_type == 'skill':
+                manip_skills = manip_sequence.get('sequence', [])
+
+                if len(manip_skills)>0:
+                    manip_traj = self.build_skill_sequence(manip_skills)
+                    # Convert trajectory to correct format
+                    for row in manip_traj:
+                        hand_moves['manip'].append(self.build_pressure_vec(row['pressure'], row['time']))
+                        
+                    manip_duration = manip_traj[-1]['time']
+                    grasp_end      = manip_traj[-1]['pressure']
+
+            else:
+                num_reps=int(self.config[channel].get('manip_repeat',1))
+
+                manip_duration = self.config[channel]['manip_sequence'][-1]['time']
+
+                first_point = self.config[channel]['manip_sequence'][0]
+                self.config[channel]['manip_sequence'].pop(0)
+
+                hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][first_point[act_kwd]], first_point['time']))
+                for rep in range(num_reps):
+                    for row in self.config[channel]['manip_sequence']:
+                        hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][row[act_kwd]], rep*manip_duration+row['time']))    
+
+                grasp_end = self.config[channel][row[act_kwd]]  
 
 
         wait_before = self.config[channel].get('wait_before_release',0.0)
@@ -447,47 +486,90 @@ class pickPlaceBuild:
         wait_after  = self.config[channel].get('wait_after_release',0.0)
 
         # Build the release move
-        # TODO: Integrate skill builder option here with prefix/suffix
+        release_sequence = self.config[channel].get('release_sequence',None)
 
-        hand_moves['release']= [self.build_pressure_vec(grasp_end, 0.0), 
-                                self.build_pressure_vec(grasp_end, wait_before),
-                                self.build_pressure_vec(idle, wait_before+grasp_duration), 
-                                self.build_pressure_vec(idle, wait_before+grasp_duration+wait_after)]
+        if release_sequence is not None:
+            release_type=release_sequence.get('type', None)
+            hand_moves['release'] = []
 
+            if release_type == 'skill':
+                release_skills = release_sequence.get('sequence', [])
+
+                if len(release_skills)>0:
+                    
+                    release_traj = self.build_skill_sequence(release_skills)
+
+                    if wait_before >0:
+                        hand_moves['release'] =  [self.build_pressure_vec(release_traj[0]['pressure'], release_traj[0]['time'])]
+                        release_traj = self.skill_builder.adjust_points(release_traj,wait_before)
+
+                    # Convert trajectory to correct format
+                    for row in release_traj:
+                        hand_moves['release'].append(self.build_pressure_vec(row['pressure'], row['time']))
+
+                    if wait_after >0:
+                        hand_moves['release'].append(self.build_pressure_vec(row['pressure'], wait_before+row['time']+wait_after))
+                        
+
+        else:
+            hand_moves['release']= [self.build_pressure_vec(grasp_end, 0.0), 
+                                    self.build_pressure_vec(grasp_end, wait_before),
+                                    self.build_pressure_vec(idle, wait_before+grasp_duration), 
+                                    self.build_pressure_vec(idle, wait_before+grasp_duration+wait_after)]
+
+        # Build the startup move
         hand_moves['startup'] = [self.build_pressure_vec(initial, 0.0), 
                                  self.build_pressure_vec(initial, 0.0)]
 
 
         if self.reset_object:
-            hand_moves['release_inv']= [
-                                self.build_pressure_vec(idle, 0.0),
-                                self.build_pressure_vec(idle, wait_before),
-                                self.build_pressure_vec(grasp_end, wait_before+grasp_duration),
-                                self.build_pressure_vec(grasp_end, wait_before+grasp_duration+wait_after)]
-
-
-            # Invert the moves
-            # TODO: figure out how to correctly invert the times for arbitrary move sequences
-
-            end_time = hand_moves['grasp'][-1][0]
-            grasp_inv = copy.deepcopy(list(reversed(hand_moves['grasp'])))
-            for waypoint in grasp_inv:
-                waypoint[0] = end_time - waypoint[0]
-            
-            hand_moves['grasp_inv'] = grasp_inv
-
-            
-            hand_moves['startup_inv'] = copy.deepcopy(list(reversed(hand_moves['startup'])))
+            #hand_moves['release_inv'] = self.invert_hand_move(hand_moves['release'])
+            #hand_moves['grasp_inv'] = self.invert_hand_move(hand_moves['grasp'])
+            hand_moves['startup_inv'] = self.invert_hand_move(hand_moves['startup'])
 
 
         self.trajectory_built[channel] = hand_moves
 
 
+    # Invert a grasping move
+    def invert_hand_move(self, move):
+        end_time = move[-1][0]
+        move_inv = copy.deepcopy(list(reversed(move)))
+        for waypoint in move_inv:
+            waypoint[0] = end_time - waypoint[0]
+        
+        return move_inv
+
+
+    # Build a sequence of skills
+    def build_skill_sequence(self, skill_sequence):
+        skill_traj = []
+        last_time = 0
+
+        # Chain together all skills in the skill sequence
+        for row in skill_sequence:
+            skill_curr = self.build_skill(row['skill'], row['vars'], row['times'], row['main_repeat'])
+
+            if len(skill_traj)>0:
+                last_time += skill_curr[-1]['time']
+            
+            skill_traj.extend(self.skill_builder.adjust_points(skill_curr, last_time))
+
+        return skill_traj
+
+
     # Build skills
-    # TODO: implement the build skills method
-    # TODO: document the skill interface in the documentation 
-    def build_skills(self):
-        pass
+    def build_skill(self, filename, vars=None, times=None, main_repeat=None):
+        try:
+            self.skill_builder.load_skill(filename)
+            self.skill_builder.generate_skill(vars, times)
+
+            skill_flat = self.skill_builder.get_skill_flattened(main_repeat = main_repeat)
+
+            return skill_flat
+
+        except ValueError:
+            raise      
 
 
     def build_pressure_vec(self,pressures, time):      

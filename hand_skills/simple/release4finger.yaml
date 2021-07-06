@@ -1,0 +1,46 @@
+context:
+  - anthro8
+  - anthro8mixed
+
+variables:
+  idle_pressure: -5     #[psi]
+  grasp_pressure: 20    #[psi]
+
+postures:
+  idle:
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+  
+  grasp4:
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+
+
+skill:
+  settings:
+    default_times:
+      main:   1.0 #[sec]
+
+    main_repeat: 1
+    
+  prefix:
+
+  main:
+    - time: 0.0
+      posture: grasp4
+    - time: 1.0
+      posture: idle
+
+  suffix:

@@ -1,0 +1,34 @@
+context:
+  - anthro8
+  - anthro8mixed
+
+variables:
+  idle_pressure: -5     #[psi]
+
+postures:
+  idle:
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+  
+skill:
+  settings:
+    default_times:
+      main:   1.0 #[sec]
+
+    main_repeat: 1
+    
+  prefix:
+
+  main:
+    - time: 0.0
+      posture: idle
+    - time: 1.0
+      posture: idle
+
+  suffix:
