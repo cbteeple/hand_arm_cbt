@@ -1,0 +1,170 @@
+settings:
+  boomerang: true
+  reset_object: true
+  type: grid # options: single, grid
+  use_arm: True
+  use_hand: True
+
+  # Ignore arm settings. They are unused.
+arm:
+  orientation_type: 'degrees' # options: 'quaterions', 'radians, 'degrees'
+
+  initial_pose:
+    position: [0.55, 0.30, 0.20]
+    orientation: [0,90,0]
+
+  grasp_pose:
+    - position: [0.55, 0.30, 0.20]
+      orientation: [0,90,0]
+    - position: [0.55, 0.30, 0.005]
+      orientation: [0,90,0]
+
+  manip_pose_before:
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, 45,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, 0,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, -45,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, -90,0]
+
+  manip_pose_after:
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, -90,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, -45,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, 0,0]
+    - position: [0.35, 0.50, 0.45]
+      orientation: [0, 45,0]
+
+  release_pose:
+    position: [0.15, 0.55, 0.005]
+    orientation: [0,90,0]
+
+  final_pose:
+    position: [0.15, 0.55, 0.20]
+    orientation: [0,90,0]
+
+
+  pickup:
+    type: to_pose # square, triangle, to_pose
+    args:
+      before: 'manip_pose_before'
+      after: 'manip_pose_after'
+
+  grid:
+    # Number of points on each side [number] in (x, y, z) order
+    num_pts: [1,1,1]  #to make cm-spaced grid points add one (for example, 0.20/0.01 = 20 segments, with 21 points total)
+
+    # Dimension of each grid side [meters] in (x, y, z) order
+    dims: [0,0,0]
+    release_dims: [0,0,0]
+
+    # Basis shifting (maybe you don't want the ref frame to be the robot's home frame)
+    # Use quaternions?
+    basis: []
+
+    affects_release_pose: True
+
+
+
+hand:
+  num_channels: 8
+  max_pressure: 35
+  min_pressure: -50
+
+  idle_pressure:    [-5,-5,  -5,-5,    -5,-5,    -5,-5]  #[psi]
+
+
+  grasp_sequence:
+    type: 'skill'
+    sequence:
+      # Grasp the object with 4 fingers at a pressure of 25 psi
+      - skill: 'simple/grasp4finger'
+        vars:  {grasp_pressure: 25 }
+        times: {main: 1.0}
+        main_repeat: 1
+
+  # Decide when to start the grasp compared to when the arm moves.
+  grasp_start: "during" #options: "after", "during"
+  wait_before_grasp: 1.0    #[sec]
+  wait_after_grasp: 0.0    #[sec]
+  #grasp_time: 0.2    #[sec]
+ 
+
+  manip_sequence:
+    type: 'skill'
+    sequence:
+      # Re-grasp the object by setting it on the palm
+      - skill: 'simple/release4finger'
+        vars:  {grasp_pressure: 25 }
+        times: {main: 2.0}
+        main_repeat: 1
+      
+      - skill: 'simple/grasp4finger'
+        vars:  {grasp_pressure: 18 }
+        times: {main: 1.0}
+        main_repeat: 1
+
+      # Perform a rotation gait with larger and larger angle per gait cycle
+      - skill: 'rotate4finger_gait/rotate4finger'
+        vars:  {grasp_pressure: 18, twist_offset: 2 }
+        times: {main: 2.0, prefix: 1.0, suffix: 0}
+        main_repeat: 2
+        
+      - skill: 'rotate4finger_gait/rotate4finger'
+        vars:  {grasp_pressure: 18, twist_offset: 3 }
+        times: {main: 2.0, prefix: 0, suffix: 0}
+        main_repeat: 2
+
+      - skill: 'rotate4finger_gait/rotate4finger'
+        vars:  {grasp_pressure: 18, twist_offset: 4 }
+        times: {main: 2.0, prefix: 0, suffix: 0}
+        main_repeat: 2
+      
+      - skill: 'rotate4finger_gait/rotate4finger'
+        vars:  {grasp_pressure: 18, twist_offset: 5 }
+        times: {main: 2.0, prefix: 0, suffix: 0}
+        main_repeat: 2
+      
+      - skill: 'rotate4finger_gait/rotate4finger'
+        vars:  {grasp_pressure: 18, twist_offset: 6 }
+        times: {main: 2.0, prefix: 0, suffix: 0}
+        main_repeat: 2
+      
+      - skill: 'rotate4finger_gait/rotate4finger'
+        vars:  {grasp_pressure: 18, twist_offset: 7 }
+        times: {main: 2.0, prefix: 0, suffix: 0}
+        main_repeat: 2
+      
+      - skill: 'rotate4finger_gait/rotate4finger'
+        vars:  {grasp_pressure: 18, twist_offset: 8 }
+        times: {main: 2.0, prefix: 0, suffix: 1}
+        main_repeat: 2
+      
+        # Strengthen the grasp before moving to the release pose
+      - skill: 'simple/grasp4finger'
+        vars:  {idle_pressure: 18, grasp_pressure: 25 }
+        times: {main: 1.0}
+        main_repeat: 1
+
+
+  release_sequence:
+    type: 'skill'
+    sequence:
+      # Release the grasp and wait at idle for 1 second
+      - skill: 'simple/release4finger'
+        vars:  {grasp_pressure: 25 }
+        times: {main: 1.0}
+        main_repeat: 1
+      - skill: 'simple/idle'
+        vars:  {}
+        times: {main: 1.0}
+        main_repeat: 1
+
+  release_start: "after" #options: "after", "during"
+  wait_before_release: 0.0   #[sec]
+  wait_after_release: 0.0    #[sec]
+  #release_time:       1.0    #[sec]

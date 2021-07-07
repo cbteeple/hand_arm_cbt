@@ -3,14 +3,17 @@ bash bringup-hw.sh hid1 anthro8
 bash bringup-planning.sh ur5e_with_soft_hand
 bash pick-place-build-plan.sh demos/pick_place_back_forth
 bash pick-place-build-plan.sh demos/pick_place_back_forth_up
-bash pick-place-build-plan.sh demos/pick_place_back_forth_skill
+bash pick-place-build-plan.sh demos/pick_place_back_forth_rot
+bash pick-place-build-plan.sh demos/pick_place_back_forth_rotgait
 
 # 1 rep = ~15 seconds
 roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth  use_checklist:=false  save:=false  reps:=1
 
 roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth_up  use_checklist:=false  save:=false  reps:=4
 
-roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth_skill  use_checklist:=false  save:=false  reps:=1
+roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth_rot  use_checklist:=false  save:=false  reps:=1
+
+roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth_rotgait  use_checklist:=false  save:=false  reps:=1
 
 roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth_up  use_checklist:=false  save:=false  reps:=1 fake:=true
 

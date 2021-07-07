@@ -553,7 +553,7 @@ class pickPlaceBuild:
             skill_curr = self.build_skill(row['skill'], row['vars'], row['times'], row['main_repeat'])
 
             if len(skill_traj)>0:
-                last_time += skill_curr[-1]['time']
+                last_time = skill_traj[-1]['time']
             
             skill_traj.extend(self.skill_builder.adjust_points(skill_curr, last_time))
 
