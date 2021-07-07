@@ -109,42 +109,27 @@ hand:
         main_repeat: 1
 
       # Perform a rotation gait with larger and larger angle per gait cycle
-      - skill: 'fingergaits/rotate4finger'
-        vars:  {grasp_pressure: 18, twist_offset: 2 }
-        times: {main: 2.0, prefix: 1.0, suffix: 0}
+      - skill: 'fingergaits/square'
+        vars:  {grasp_pressure: 18, x_offset: 3, y_offset: 3 }
+        times: {main: 4.0, prefix: 1.0, suffix: 1.0}
         main_repeat: 2
         
-      - skill: 'fingergaits/rotate4finger'
-        vars:  {grasp_pressure: 18, twist_offset: 3 }
-        times: {main: 2.0, prefix: 0, suffix: 0}
+      - skill: 'fingergaits/square'
+        vars:  {grasp_pressure: 18, x_offset: 3, y_offset: 6 }
+        times: {main: 4.0, prefix: 1.0, suffix: 1.0}
         main_repeat: 2
 
-      - skill: 'fingergaits/rotate4finger'
-        vars:  {grasp_pressure: 18, twist_offset: 4 }
-        times: {main: 2.0, prefix: 0, suffix: 0}
+      - skill: 'fingergaits/square'
+        vars:  {grasp_pressure: 18, x_offset: 6, y_offset: 3 }
+        times: {main: 4.0, prefix: 1.0, suffix: 1.0}
         main_repeat: 2
       
-      - skill: 'fingergaits/rotate4finger'
-        vars:  {grasp_pressure: 18, twist_offset: 5 }
-        times: {main: 2.0, prefix: 0, suffix: 0}
+      - skill: 'fingergaits/square'
+        vars:  {grasp_pressure: 18, x_offset: 6, y_offset: 6 }
+        times: {main: 4.0, prefix: 1.0, suffix: 1.0}
         main_repeat: 2
       
-      - skill: 'fingergaits/rotate4finger'
-        vars:  {grasp_pressure: 18, twist_offset: 6 }
-        times: {main: 2.0, prefix: 0, suffix: 0}
-        main_repeat: 2
-      
-      - skill: 'fingergaits/rotate4finger'
-        vars:  {grasp_pressure: 18, twist_offset: 7 }
-        times: {main: 2.0, prefix: 0, suffix: 0}
-        main_repeat: 2
-      
-      - skill: 'fingergaits/rotate4finger'
-        vars:  {grasp_pressure: 18, twist_offset: 8 }
-        times: {main: 2.0, prefix: 0, suffix: 1}
-        main_repeat: 2
-      
-        # Strengthen the grasp before moving to the release pose
+      # Strengthen the grasp before moving to the release pose
       - skill: 'simple/grasp4finger'
         vars:  {idle_pressure: 18, grasp_pressure: 25 }
         times: {main: 1.0}

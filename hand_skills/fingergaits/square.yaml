@@ -1,0 +1,94 @@
+context:
+  - anthro8
+  - anthro8mixed
+
+variables:
+  grasp_pressure: 20    #[psi]
+  x_offset: 4       #[psi]
+  y_offset: 4       #[psi]
+
+postures:
+  grasp4:
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+
+  upright:
+    - "grasp_pressure +y_offset +x_offset"
+    - "grasp_pressure +y_offset -x_offset"
+    - "grasp_pressure +y_offset -x_offset"
+    - "grasp_pressure -y_offset -x_offset"
+    - "grasp_pressure -y_offset -x_offset"
+    - "grasp_pressure -y_offset +x_offset"
+    - "grasp_pressure -y_offset +x_offset"
+    - "grasp_pressure +y_offset +x_offset"
+
+  upleft:
+    - "grasp_pressure +y_offset -x_offset"
+    - "grasp_pressure +y_offset +x_offset"
+    - "grasp_pressure +y_offset +x_offset"
+    - "grasp_pressure -y_offset +x_offset"
+    - "grasp_pressure -y_offset +x_offset"
+    - "grasp_pressure -y_offset -x_offset"
+    - "grasp_pressure -y_offset -x_offset"
+    - "grasp_pressure +y_offset -x_offset"
+
+  downright:
+    - "grasp_pressure -y_offset +x_offset"
+    - "grasp_pressure -y_offset -x_offset"
+    - "grasp_pressure -y_offset -x_offset"
+    - "grasp_pressure +y_offset -x_offset"
+    - "grasp_pressure +y_offset -x_offset"
+    - "grasp_pressure +y_offset +x_offset"
+    - "grasp_pressure +y_offset +x_offset"
+    - "grasp_pressure -y_offset +x_offset"
+
+  downleft:
+    - "grasp_pressure -y_offset -x_offset"
+    - "grasp_pressure -y_offset +x_offset"
+    - "grasp_pressure -y_offset +x_offset"
+    - "grasp_pressure +y_offset +x_offset"
+    - "grasp_pressure +y_offset +x_offset"
+    - "grasp_pressure +y_offset -x_offset"
+    - "grasp_pressure +y_offset -x_offset"
+    - "grasp_pressure -y_offset -x_offset"
+
+
+
+skill:
+  settings:
+    default_times:
+      prefix: 1.0 #[sec]
+      main:   2.0 #[sec]
+      suffix: 1.0 #[sec]
+
+    main_repeat: 4
+    
+  prefix:
+    - time: 0.0
+      posture: grasp4
+    - time: 1.0
+      posture: upleft
+
+  main:
+    - time: 0.0
+      posture: upleft
+    - time: 0.25
+      posture: upright
+    - time: 0.50
+      posture: downright
+    - time: 0.75
+      posture: downleft
+    - time: 1.0
+      posture: upleft
+
+  suffix:
+    - time: 0.0
+      posture: upleft
+    - time: 1.0
+      posture: grasp4

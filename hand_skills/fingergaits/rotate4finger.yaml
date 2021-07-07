@@ -3,22 +3,11 @@ context:
   - anthro8mixed
 
 variables:
-  idle_pressure: -5     #[psi]
   grasp_pressure: 20    #[psi]
   twist_offset: 5       #[psi]
   retract_fraction: 0.5       #[psi]
 
-postures:
-  idle:
-    - "idle_pressure"
-    - "idle_pressure"
-    - "idle_pressure"
-    - "idle_pressure"
-    - "idle_pressure"
-    - "idle_pressure"
-    - "idle_pressure"
-    - "idle_pressure"
-  
+postures:  
   grasp4:
     - "grasp_pressure"
     - "grasp_pressure"
