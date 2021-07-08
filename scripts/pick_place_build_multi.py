@@ -51,9 +51,9 @@ class pickPlaceBuild:
         # Read the trajectory configuration file
         self.filepath = os.path.join(filepath_traj)
         self.filepath_out_dir = os.path.join(filepath_out,self.traj_profile)
-        config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml')
+        self.config_file =   os.path.join(self.filepath,self.traj_profile+'.yaml')
 
-        with open(config_file,'r') as f:
+        with open(self.config_file,'r') as f:
             # use safe_load instead of load
             self.config = yaml.safe_load(f)
             f.close()
@@ -279,8 +279,18 @@ class pickPlaceBuild:
         if self.config['arm']['pickup']['type'] == 'to_pose':
             ops.append({'arm': 'manip_before', 'hand': False, 'servo': False})
 
-        if self.config['hand'].get('manip_sequence',False):
+        hand_manip = self.config['hand'].get('manip_sequence', None)
+        arm_manip = self.config['arm'].get('manip_sequence', None)
+        if hand_manip and arm_manip:
+            ops.append({'arm': 'manip_seq_before', 'hand': False, 'servo': False})
+            ops.append({'arm': 'manip', 'hand': 'manip', 'servo': False})
+            ops.append({'arm': 'manip_seq_after', 'hand': False, 'servo': False})
+        elif hand_manip:
             ops.append({'arm': False, 'hand': 'manip', 'servo': False})
+        elif arm_manip:
+            ops.append({'arm': 'manip_seq_before', 'hand': False, 'servo': False})
+            ops.append({'arm': 'manip', 'hand': False, 'servo': False})
+            ops.append({'arm': 'manip_seq_after', 'hand': False, 'servo': False})
         
         if self.config['arm']['pickup']['type'] == 'to_pose':
             ops.append({'arm': 'manip_after', 'hand': False, 'servo': False})
@@ -756,6 +766,43 @@ class pickPlaceBuild:
                                 above_release,
                                 release_start ]
    
+        # Build the manipulation sequence
+        arm_manip_sequence = config['arm'].get('manip_sequence', None)
+
+        if arm_manip_sequence is not None:
+            manip_type=arm_manip_sequence['type']
+            manip_args=arm_manip_sequence['args']
+
+            if manip_type == 'trajectory':
+                manip_traj = manip_args['trajectory']
+                manip_sequence = manip_args['sequence']
+
+                manip_file =   os.path.join(os.path.dirname(self.config_file),manip_traj)
+                with open(manip_file,'r') as f:
+                    # use safe_load instead of load
+                    manip_config = yaml.safe_load(f)
+                
+                manip_move = []
+                keylist = list(manip_config.keys())
+
+                for move in manip_sequence:
+                    if not (move in keylist):
+                        raise ValueError("Arm manipulation sequence contains moves that are not defined")
+
+                for move in manip_sequence:
+                    manip_move.extend(manip_config[move])
+
+                arm_moves['manip'] = manip_move
+                arm_moves['manip_seq_before'] = [manip_move[0]]
+                arm_moves['manip_seq_after'] = [manip_move[-1]]
+
+            if arm_moves.get('manip_before',None) is not None:
+                arm_moves['manip_seq_before'].insert(0, arm_moves['manip_before'][-1])
+            
+            if arm_moves.get('manip_after',None) is not None:
+                arm_moves['manip_seq_after'].append(arm_moves['manip_after'][0])
+                    
+
 
         # Build the post-release move.
         arm_moves['post'] = [release_end,
