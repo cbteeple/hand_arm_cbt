@@ -5,6 +5,7 @@ context:
 variables:
   idle_pressure: -5     #[psi]
   grasp_pressure: 20    #[psi]
+  grasp_split:    0.4
 
 postures:
   idle:
@@ -16,7 +17,27 @@ postures:
     - "idle_pressure"
     - "idle_pressure"
     - "idle_pressure"
+
+  grasp1:
+    - "grasp_split*grasp_pressure"
+    - "grasp_split*grasp_pressure"
+    - "grasp_split*grasp_pressure"
+    - "grasp_split*grasp_pressure"
+    - "grasp_split*grasp_pressure"
+    - "grasp_split*grasp_pressure"
+    - "grasp_split*grasp_pressure"
+    - "grasp_split*grasp_pressure"
   
+  grasp2:
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_split*grasp_pressure"
+    - "grasp_split*grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "grasp_split*grasp_pressure"
+    - "grasp_split*grasp_pressure"
+
   grasp4:
     - "grasp_pressure"
     - "grasp_pressure"
@@ -39,8 +60,10 @@ skill:
 
   main:
     - time: 0.0
-      posture: grasp4
-    - time: 1.0
       posture: idle
+    - time: 1.0
+      posture: grasp1
+    - time: 2.0
+      posture: grasp4
 
   suffix:

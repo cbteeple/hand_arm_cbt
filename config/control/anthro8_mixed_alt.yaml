@@ -1,0 +1,50 @@
+# Channels - turn them on or off
+channels:
+    num_channels: 8
+    states: [1,1,1,1, 1,1,1,1]
+
+
+# Loop time for outputting data.
+#   This is not strictly enforced, but will always be within 10 ms.
+#   If set to 0ms, the loop wil run as fast as the control loop.
+data_loop_time: 5 #[ms]
+
+
+#Set the PID Values.
+#   If "all_equal" is True, then only the values in "values" are used
+#   If "all-equal" is False, then settings for all channels must be specified as a list of lists
+PID:
+    all_equal: True
+    integrator_start: 5.0
+    values: [0.09, 1.5, 0] #[0.1000, 0.0010, 0.0010]
+
+# Valve PWM offsets (set between 0 and 255 for the source and vent valves)
+valve_offsets: [[224, 226], [224, 235], [228, 228], [224, 229], [217, 232], [215, 216], [218, 212], [213, 226]]
+    
+# Set the max and min pressures in software [psi]
+#   If single value, then it will be set for all channels
+#   If a vector of length NUM_CHANNELS, then each channel is set independently
+max_pressure: [20,25,40,40,20,25,40,40]
+min_pressure: -14.7
+
+# Setpoint transition time (sec)
+transitions: 0.3
+
+# For debugging purposes
+echo: true
+
+
+gui_config:
+    - # Row 1
+        # Group 1
+        - 'channels': [0,1]
+          'layout': 'horiz'
+        # Group 3
+        - 'channels': [4,5]
+          'layout': 'horiz'
+        # Group 2
+        - 'channels': [3,2]
+          'layout': 'diff'
+        # Group 4
+        - 'channels': [7,6]
+          'layout': 'diff'

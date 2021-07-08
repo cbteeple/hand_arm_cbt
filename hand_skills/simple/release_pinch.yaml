@@ -1,10 +1,10 @@
 context:
-  - anthro8
-  - anthro8_mixed
+  - anthro8_mixed_alt
 
 variables:
   idle_pressure: -5     #[psi]
   grasp_pressure: 20    #[psi]
+  pinch_pressure: 15    #[psi]
 
 postures:
   idle:
@@ -16,14 +16,25 @@ postures:
     - "idle_pressure"
     - "idle_pressure"
     - "idle_pressure"
-  
+
+ 
+  grasp2:
+    - "idle_pressure"
+    - "pinch_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "pinch_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+
   grasp4:
+    - "idle_pressure"
+    - "pinch_pressure"
     - "grasp_pressure"
     - "grasp_pressure"
-    - "grasp_pressure"
-    - "grasp_pressure"
-    - "grasp_pressure"
-    - "grasp_pressure"
+    - "idle_pressure"
+    - "pinch_pressure"
     - "grasp_pressure"
     - "grasp_pressure"
 
@@ -40,7 +51,7 @@ skill:
   main:
     - time: 0.0
       posture: grasp4
-    - time: 1.0
+    - time: 2.0
       posture: idle
 
   suffix:

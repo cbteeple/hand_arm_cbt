@@ -1,6 +1,6 @@
 context:
   - anthro8
-  - anthro8_mixed
+  - anthro8mixed
 
 variables:
   idle_pressure: -5     #[psi]
@@ -17,6 +17,16 @@ postures:
     - "idle_pressure"
     - "idle_pressure"
   
+  grasp2:
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+    - "grasp_pressure"
+    - "grasp_pressure"
+    - "idle_pressure"
+    - "idle_pressure"
+
   grasp4:
     - "grasp_pressure"
     - "grasp_pressure"
@@ -39,8 +49,10 @@ skill:
 
   main:
     - time: 0.0
-      posture: grasp4
-    - time: 1.0
       posture: idle
+    - time: 0.5
+      posture: grasp2
+    - time: 1.0
+      posture: grasp4
 
   suffix:

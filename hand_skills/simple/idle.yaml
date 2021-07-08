@@ -1,6 +1,7 @@
 context:
   - anthro8
-  - anthro8mixed
+  - anthro8_mixed
+  - anthro8_mixed_alt
 
 variables:
   idle_pressure: -5     #[psi]
