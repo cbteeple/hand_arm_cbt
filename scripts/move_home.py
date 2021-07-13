@@ -24,103 +24,199 @@ from sensor_msgs.msg import JointState
 import pressure_controller_ros.msg
 from math import pi
 import numpy as np
+import yaml
+import os
 
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
 zero_pos = [0,-90,0,-90,0,0]
 home_pos = [i*180.0/pi for i in [1.5707,-1.3090,1.8383,-0.5236,1.5709,-1.5712]]
 
+curr_path=os.path.dirname(os.path.abspath(__file__))
+pose_config = os.path.join(curr_path,"../config/arm_poses.yaml")
+
 
 scaler = 1.0
+
     
-arm_client = None
-hand_client = None
+import thread
+import threading
 
-
-
-def move_home():
-    global joints_pos
-    g = FollowJointTrajectoryGoal()
-    g.trajectory = JointTrajectory()
-    g.trajectory.joint_names = JOINT_NAMES
+def raw_input_with_timeout(prompt, timeout=30.0):
+    print prompt,    
+    timer = threading.Timer(timeout, thread.interrupt_main)
+    astring = None
     try:
-        move_to(home_pos,g)
-        #zero_hand()
-
+        timer.start()
+        astring = raw_input(prompt)
     except KeyboardInterrupt:
-        arm_client.cancel_goal()
-        #zero_hand()
-        raise
-    except:
-        raise
+        pass
+    timer.cancel()
+    return astring
 
 
 
-def move_zero():
-    global joints_pos
-    g = FollowJointTrajectoryGoal()
-    g.trajectory = JointTrajectory()
-    g.trajectory.joint_names = JOINT_NAMES
-    try:
-        move_to(zero_pos,g)
-        #zero_hand()
+class PoseHandler():
+    def __init__(self, pose_config, joint_names):
+        self.pose_config = pose_config
+        self.JOINT_NAMES = joint_names
 
-    except KeyboardInterrupt:
-        arm_client.cancel_goal()
-        #zero_hand()
-        raise
-    except:
-        raise
+        self.arm_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
+        self.ur_script_pub = rospy.Publisher('/ur_driver/URScript', std_msgs.msg.String, queue_size=10)
+        #hand_client = actionlib.SimpleActionClient('pre_built_traj', pressure_controller_ros.msg.RunAction)
+        print "Waiting for servers..."
+        self.arm_client.wait_for_server()
+        #hand_client.wait_for_server()
+        print "Connected to servers"
 
+        self.r=rospy.Rate(2)
 
 
-def zero_hand():
-    hand_goal = pressure_controller_ros.msg.RunGoal(traj=False, data=False, wait_for_finish = False)
-    hand_client.send_goal(hand_goal)
-    hand_client.wait_for_result()
+    def _get_pose(self):
+        joint_states = rospy.wait_for_message("joint_states", JointState)
+        joints_pos = list(joint_states.position)
+        return joints_pos
+
+
+    def _get_saved_poses(self):
+        if os.path.isfile(self.pose_config):
+            with open(self.pose_config, 'r') as f:
+                saved_poses = yaml.safe_load(f)
+        else:
+            saved_poses={}
+
+        return saved_poses
+
+    def _save_poses(self, poses):
+        filename = self.pose_config
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        
+        with open(self.pose_config, 'w+') as f:
+            yaml.dump(poses,f,default_flow_style=None)
+
+
+    def get_pose_by_name(self, pose_name):
+        saved_poses = self._get_saved_poses()
+        return saved_poses[pose_name]
+
+
+    def set_pose_by_name(self, pose_name, pose):
+        if pose_name=='home' or pose_name=='zero':
+            response = raw_input('Are you sure you want to overwrite the "%s" pose? (y/[N])'%(pose_name))
+            print(response)
+            if response.lower() == 'y':
+                pass
+
+            else:
+                print('Aborting pose set')
+                return False
+
+        saved_poses = self._get_saved_poses()
+        saved_poses[pose_name] = pose
+        self._save_poses(saved_poses)
+        return True
+
+
+    def move_to_pose(self, pose_name):
+        pose = self.get_pose_by_name(pose_name)
+        self.move_to(pose)
+
+
+    def set_pose(self, pose_name):
+        self.set_freedrive_mode(True)
+
+        new_pose = {}
+        new_pose['joints'] = self._get_pose()
+        new_pose['units']  = 'radians'
+        response = self.set_pose_by_name(pose_name, new_pose)
+        print('Pose "%s" saved:'%(pose_name))
+        print(new_pose)
 
 
 
-def move_to(new_pos,g):
-    new_pos_rad = np.deg2rad(new_pos).tolist()
-    joint_states = rospy.wait_for_message("joint_states", JointState)
-    joints_pos = joint_states.position
-    g.trajectory.points = [
-        JointTrajectoryPoint(positions=joints_pos, velocities=[0]*6, time_from_start=rospy.Duration(0.0)),
-        JointTrajectoryPoint(positions=new_pos_rad, velocities=[0]*6, time_from_start=rospy.Duration(2.0*scaler))]
+    def move_to(self, new_pos):
+        joints = new_pos['joints']
+        units = new_pos['units']
 
-    arm_client.send_goal(g)
-    arm_client.wait_for_result()
+        if units == 'degrees':
+            new_pos_rad = np.deg2rad(joints).tolist()
+        else:
+            new_pos_rad = joints
+
+        joints_pos = self._get_pose()
+        g = FollowJointTrajectoryGoal()
+        g.trajectory = JointTrajectory()
+        g.trajectory.joint_names = JOINT_NAMES
+        g.trajectory.points = [
+            JointTrajectoryPoint(positions=joints_pos, velocities=[0]*6, time_from_start=rospy.Duration(0.0)),
+            JointTrajectoryPoint(positions=new_pos_rad, velocities=[0]*6, time_from_start=rospy.Duration(2.0*scaler))]
+
+        try:
+            self.arm_client.send_goal(g)
+            self.arm_client.wait_for_result()
+
+        except KeyboardInterrupt:
+            self.arm_client.cancel_goal()
+            raise
+        except:
+            raise
+
+
+    def set_freedrive_mode(self, enable_teach_mode=False):
+        if enable_teach_mode:
+            # send URScript command that will enable teach mode
+            
+            # get current position
+            try:
+                print("Starting Freedrive Mode: You can now move the robot by hand!")
+                #while not rospy.is_shutdown():
+                self.ur_script_pub.publish('def myProg():\n\twhile (True):\n\t\tfreedrive_mode()\n\t\tsync()\n\tend\nend\n')
+                response = raw_input('Press ENTER to save')
+                self.ur_script_pub.publish('def myProg():\n\twhile (True):\n\t\tend_freedrive_mode()\n\t\tsleep(0.5)\n\tend\nend\n')
+
+            except KeyboardInterrupt:
+                print("\nExiting Freedrive Mode: The robot is now locked in place.")
+                self.ur_script_pub.publish('def myProg():\n\twhile (True):\n\t\tend_freedrive_mode()\n\t\tsleep(0.5)\n\tend\nend\n')
+        else:
+            # send URScript command that will disable teach mode
+            print("\nExiting Freedrive Mode: The robot is now locked in place.")
+            self.ur_script_pub.publish('def myProg():\n\twhile (True):\n\t\tend_freedrive_mode()\n\t\tsleep(0.5)\n\tend\nend\n')
+
+
 
 
    
 def main():
-    global arm_client
-    global hand_client
     try:
         if len(sys.argv)==2:
-            position_type=int(sys.argv[1])
+            cmd_type = 'go'
+            position_type=str(sys.argv[1])
+
+        elif len(sys.argv)==3:
+            cmd_type=str(sys.argv[1])
+            position_type=str(sys.argv[2])
         
         rospy.init_node("test_move", anonymous=True, disable_signals=True)
-        arm_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
-        #hand_client = actionlib.SimpleActionClient('pre_built_traj', pressure_controller_ros.msg.RunAction)
-        print "Waiting for servers..."
-        arm_client.wait_for_server()
-        #hand_client.wait_for_server()
-        print "Connected to servers"
         parameters = rospy.get_param(None)
         index = str(parameters).find('prefix')
         if (index > 0):
             prefix = str(parameters)[index+len("prefix': '"):(index+len("prefix': '")+str(parameters)[index+len("prefix': '"):-1].find("'"))]
             for i, name in enumerate(JOINT_NAMES):
                 JOINT_NAMES[i] = prefix + name
-        if position_type==0:
-            move_zero()
-        elif position_type==1:
-            move_home()
+
+        pose_handler = PoseHandler(pose_config, JOINT_NAMES)
+        
+        if cmd_type == 'go':
+            pose_handler.move_to_pose(position_type)
+        
+        if cmd_type == 'set':
+            pose_handler.set_pose(position_type)
 
     except KeyboardInterrupt:
         rospy.signal_shutdown("KeyboardInterrupt")
         raise
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    main()
