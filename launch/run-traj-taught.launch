@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<launch>
+
+
+<!-- Get arguements related to the trajectory to run -->
+<arg name="traj" doc="Configuration profile to use" />
+<arg name="speed_factor" default="1.0" doc="the speed to run the trajectory at" />
+<arg name="reps" default="1" doc="The number of reps" />
+<arg name="start" default="0" doc="Where to start" />
+<arg name="replan" default="false" doc="decide whether to re-plan the trajectories on the fly" />
+
+<!-- Set up devices using a config file -->
+<arg name="config" default="false" doc="Config file" />
+
+<!-- OR: If config file not provided, decide which devices to use-->
+<arg name="arm" default="true" doc="Use the arm" />
+<arg name="hand" default="true" doc="Use the hand" />
+<arg name="use_camera" default="true" doc="Save a video from the camera" />
+<arg name="use_tags" default="true" doc="Save april tag data" />
+
+<!-- Other assorted settings -->
+<arg name="save" default="true" doc="Save data" />
+<arg name="fake" default="false" doc="Save data" />
+<arg name="debug" default="False" doc="Whether debug is on" />
+<arg name="id" default="" doc="Some output ID that will be appended to the data filename" />
+<arg name="use_checklist" default="true" doc="Ask for a success label after each rep" />
+<arg name="hand_data_channel" default="pressure_controller" doc="Ask for a success label after each rep" />
+
+
+<!-- start the run node and pass it all of the parameters -->
+    <node name="pick_and_place_node" pkg="hand_arm" type="run_traj.py" respawn="false"
+    	output="screen">
+      	<param name="traj_profile" type="str" value=".arm/$(arg traj)" />
+		<param name="speed_factor" type="double" value="$(arg speed_factor)" />
+		<param name="num_reps" type="int" value="$(arg reps)" />
+		<param name="start" type="int" value="$(arg start)"/>
+		<param name="replan" type="bool" value="$(arg replan)"/>
+
+		<param name="use_arm" type="bool" value="$(arg arm)" unless="$(eval arg('config') !=0)" />
+		<param name="use_hand" type="bool" value="$(arg hand)" unless="$(eval arg('config') !=0)" />
+		<param name="use_camera" type="bool" value="$(arg use_camera)" unless="$(eval arg('config') !=0)" />
+		<param name="use_tags" type="bool" value="$(arg use_tags)" unless="$(eval arg('config') !=0)" />
+
+		<param name="save_data" type="bool" value="$(arg save)" />
+		<param name="fake" type="bool" value="$(arg fake)" />
+		<param name="debug" type="bool" value="$(arg debug)"/>
+		<param name="out_id" type="str" value="$(arg id)" />
+		<param name="use_checklist" type="bool" value="$(arg use_checklist)"/>
+		<param name="hand_data_channel" type="str" value="$(arg hand_data_channel)"/>
+		
+
+		<rosparam command="load" file="$(find hand_arm)/config/run_configs/$(arg config)" if="$(eval arg('config') !=0)" />
+    </node>
+</launch>

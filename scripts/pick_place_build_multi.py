@@ -584,7 +584,7 @@ class pickPlaceBuild:
             raise      
 
 
-    def build_pressure_vec(self,pressures, time):      
+    def build_pressure_vec(self,pressures, time):
         # Coerce pressures
         pressure_too_high = False
         pressure_too_low = False

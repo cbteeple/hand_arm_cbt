@@ -46,7 +46,7 @@ def get_traj(traj_file):
     global arm_trajIn
     if traj_file is not None:
         curr_path=os.path.dirname(os.path.abspath(__file__))
-        inFile_rel=os.path.join("trajectories","arm",traj_file+".yaml")
+        inFile_rel=os.path.join("trajectories","arm",traj_file,"trajectory.yaml")
         inFile=os.path.join(curr_path,"..",inFile_rel)
         print("Reading Trajectory from file: '%s'"%(inFile_rel))
 

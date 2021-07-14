@@ -32,6 +32,7 @@ import yaml
 import os
 import sys
 from pynput.keyboard import Key, KeyCode, Listener
+from hand_arm_cbt.traj_planner import TrajPlanner
 
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
@@ -53,9 +54,10 @@ class Teacher:
         if self.traj_file is None:
             print("Starting Teach Mode, but not saving a file")
 
-        self.compute_fk = rospy.ServiceProxy('/compute_fk', GetPositionFK)    
-        self.compute_fk.wait_for_service()
-        print("got kinematics service")
+        if self.point_type == 'cartesian':
+            self.compute_fk = rospy.ServiceProxy('/compute_fk', GetPositionFK)    
+            self.compute_fk.wait_for_service()
+            print("got kinematics service")
 
         self.get_settings()
         print("Got Settings")
@@ -63,6 +65,7 @@ class Teacher:
         self.curr_segment = 0
         self.curr_segment_name= "segment_%03d"%(self.curr_segment)
         self.sequence = []
+        self.sequence.append({'arm': 'pre', 'hand':'startup'})
         self.sequence.append({'arm': self.curr_segment_name, 'hand':False})
 
         self.joint_traj = {}
@@ -70,6 +73,7 @@ class Teacher:
 
         self.use_hand=False
         self.last_time = None
+        self.freedrive_enabled = False
 
 
     def get_settings(self):
@@ -80,7 +84,8 @@ class Teacher:
             robotiq_force = int(raw_input("Enter grasping force (0, 200, default=0): ") or "0")
 
             from robotiq_trajectory_control.robotiq_2f_trajectory import trajSender as robotiq_traj_sender
-            self.hand_sender = robotiq_traj_sender(1.0)
+            self.hand_sender = robotiq_traj_sender()
+            self.hand_sender.DEBUG = False
 
             import robotiq_trajectory_control.msg as hand_msg
             self.grasp_traj_send = hand_msg.TrajectoryGoal()
@@ -96,7 +101,7 @@ class Teacher:
 
             self.hand['grasp'] = self.grasp_traj
             self.hand['release'] = self.release_traj
-            self.hand['startup'] = self.release_traj[0]
+            self.hand['startup'] = [self.release_traj[0]]
 
             self.hand_sender.go_to_start(self.release_traj, reset_time=2.0, blocking=False)
 
@@ -107,55 +112,63 @@ class Teacher:
             g_time = float(raw_input("Enter grasping time (default=1.5 sec): ") or "1.5")
 
             from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
-            self.hand_sender = pneu_traj_sender(1.0)
+            self.hand_sender = pneu_traj_sender()
+            self.hand_sender.DEBUG = False
         
-            num_channels = sum(rospy.get_param('/config/num_channels'))
+            num_channels = sum(rospy.get_param('/pressure_control/num_channels'))
             
             import pressure_controller_ros.msg as hand_msg
             self.grasp_traj = [ [0.0] + [i_press]*num_channels, [g_time] + [g_press]*num_channels ]
             self.release_traj = [ [0.0] + [g_press]*num_channels, [g_time] + [i_press]*num_channels ]
-            
-            self.grasp_traj_send = hand_msg.PressureTrajectoryGoal()
-            self.grasp_traj_send.trajectory = hand_msg.PressureTrajectory()
-            self.grasp_traj_send.trajectory.points.append(hand_msg.PressureTrajectoryPoint(pressures=self.grasp_traj[0][1:], time_from_start=self.grasp_traj[0][0]))
-            self.grasp_traj_send.trajectory.points.append(hand_msg.PressureTrajectoryPoint(pressures=self.grasp_traj[1][1:], time_from_start=self.grasp_traj[0][1]))
-            
-            self.release_traj_send = hand_msg.PressureTrajectoryGoal()
-            self.release_traj_send.trajectory = hand_msg.PressureTrajectory()
-            self.release_traj_send.trajectory.points.append(hand_msg.PressureTrajectoryPoint(pressures=self.release_traj[0][1:], time_from_start=self.release_traj[0][0]))
-            self.release_traj_send.trajectory.points.append(hand_msg.PressureTrajectoryPoint(pressures=self.release_traj[1][1:], time_from_start=self.release_traj[0][1]))
+
+            self.grasp_traj_send = self.hand_sender.build_traj(self.grasp_traj)
+            self.release_traj_send = self.hand_sender.build_traj(self.release_traj)
 
             self.hand['grasp'] = self.grasp_traj
             self.hand['release'] = self.release_traj
-            self.hand['startup'] = self.grasp_traj[0]
+            self.hand['startup'] = [self.grasp_traj[0]]
 
             self.hand_sender.go_to_start(self.grasp_traj, 2.0, blocking=False)
+            print('Hand is at starting pos')
 
         else:
             self.hand_sender = None
 
 
-    def set_freedrive_mode(self, enable_teach_mode=False):
-            if enable_teach_mode:
-                # send URScript command that will enable teach mode
-                
-                # get current position
-                try:
-                    print("Starting Freedrive Mode: You can now move the robot by hand!")
-                    while not rospy.is_shutdown():
-                        self.ur_script_pub.publish('def myProg():\n\twhile (True):\n\t\tfreedrive_mode()\n\t\tsync()\n\tend\nend\n')
+    def enable_freedrive(self):
+        try:
+            print("Starting Freedrive Mode: You can now move the robot by hand!")
+            self.ur_script_pub.publish('def myProg():\n\twhile (True):\n\t\tfreedrive_mode()\n\t\tsync()\n\tend\nend\n')
+            self.freedrive_enabled = True
+        except KeyboardInterrupt:
+            self.disable_freedrive()
 
-                        if self.toggle_record:
-                            self.get_pos()
+    
+    def disable_freedrive(self):
+        print("\nExiting Freedrive Mode: The robot is now locked in place.")
+        self.ur_script_pub.publish('def myProg():\n\twhile (True):\n\t\tend_freedrive_mode()\n\t\tsleep(0.5)\n\tend\nend\n')
+        self.freedrive_enabled = False
 
-                        self.r.sleep()
-                except KeyboardInterrupt:
-                    print("\nExiting Freedrive Mode: The robot is now locked in place.")
-                    self.ur_script_pub.publish('def myProg():\n\twhile (True):\n\t\tend_freedrive_mode()\n\t\tsleep(0.5)\n\tend\nend\n')
-            else:
-                # send URScript command that will disable teach mode
-                print("\nExiting Freedrive Mode: The robot is now locked in place.")
-                self.ur_script_pub.publish('def myProg():\n\twhile (True):\n\t\tend_freedrive_mode()\n\t\tsleep(0.5)\n\tend\nend\n')
+    def toggle_freedrive(self):
+        if self.freedrive_enabled:
+            self.disable_freedrive()
+        else:
+            self.enable_freedrive()
+
+
+
+    def use_freedrive_mode(self):
+        # send URScript command that will enable teach mode
+        try:
+            self.enable_freedrive()
+            while not rospy.is_shutdown():
+
+                if self.toggle_record:
+                    self.get_pos()
+
+                self.r.sleep()
+        except KeyboardInterrupt:
+            self.disable_freedrive()
         
 
     def grasp(self, time=None):
@@ -169,7 +182,8 @@ class Teacher:
         self.joint_traj[self.curr_segment_name].append(curr_jp)
 
         try: 
-            self.hand_sender.execute_traj(self.grasp_traj_send)
+            self.hand_sender.execute_traj(self.grasp_traj_send, blocking=False)
+            self.hand_sender.traj_client.wait_for_result()
         except:
             raise
 
@@ -187,7 +201,8 @@ class Teacher:
         self.joint_traj[self.curr_segment_name].append(curr_jp)
 
         try:
-            self.hand_sender.execute_traj(self.release_traj_send)
+            self.hand_sender.execute_traj(self.release_traj_send, blocking=False)
+            self.hand_sender.traj_client.wait_for_result()
         except:
             raise
 
@@ -251,7 +266,7 @@ class Teacher:
     def save_file(self):
         if self.traj_file is not None:
             curr_path=os.path.dirname(os.path.abspath(__file__))
-            outFile_rel=os.path.join("trajectories","arm",self.traj_file,"trajectory.yaml")
+            outFile_rel=os.path.join("trajectories",".arm",self.traj_file,"trajectory.yaml")
             outFile=os.path.join(curr_path,"..",outFile_rel)
 
             print("Saving Trajectory to file: '%s'"%(outFile_rel))
@@ -275,6 +290,15 @@ class Teacher:
                 yaml.dump(out, f, default_flow_style=None)
 
 
+    def plan_traj(self):
+        traj = os.path.join('.arm',self.traj_file)
+        planner = TrajPlanner(traj=traj)
+        planner.plan_all()
+
+        
+
+
+
     def on_press(self, key):
         pass
 
@@ -290,6 +314,9 @@ class Teacher:
         if key == KeyCode(char='r'):
             self.get_pos(time=1.5)
             self.release(time=1.5)
+        
+        if key == KeyCode(char='f'):
+            self.toggle_freedrive()
 
         elif key == Key.shift:
             self.toggle_record = not self.toggle_record
@@ -331,10 +358,9 @@ def main(file_name=None, flags=""):
             on_release=teach.on_release)
         listener.start()
 
-        teach.set_freedrive_mode(True)
-
-
+        teach.use_freedrive_mode()
         teach.save_file()
+        teach.plan_traj()
 
     except KeyboardInterrupt:
         
