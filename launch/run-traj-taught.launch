@@ -6,8 +6,6 @@
 <arg name="traj" doc="Configuration profile to use" />
 <arg name="speed_factor" default="1.0" doc="the speed to run the trajectory at" />
 <arg name="reps" default="1" doc="The number of reps" />
-<arg name="start" default="0" doc="Where to start" />
-<arg name="replan" default="false" doc="decide whether to re-plan the trajectories on the fly" />
 
 <!-- Set up devices using a config file -->
 <arg name="config" default="false" doc="Config file" />
@@ -19,7 +17,7 @@
 <arg name="use_tags" default="true" doc="Save april tag data" />
 
 <!-- Other assorted settings -->
-<arg name="save" default="true" doc="Save data" />
+<arg name="save" default="false" doc="Save data" />
 <arg name="fake" default="false" doc="Save data" />
 <arg name="debug" default="False" doc="Whether debug is on" />
 <arg name="id" default="" doc="Some output ID that will be appended to the data filename" />
@@ -33,8 +31,8 @@
       	<param name="traj_profile" type="str" value=".arm/$(arg traj)" />
 		<param name="speed_factor" type="double" value="$(arg speed_factor)" />
 		<param name="num_reps" type="int" value="$(arg reps)" />
-		<param name="start" type="int" value="$(arg start)"/>
-		<param name="replan" type="bool" value="$(arg replan)"/>
+		<param name="start" type="int" value="0"/>
+		<param name="replan" type="bool" value="false"/>
 
 		<param name="use_arm" type="bool" value="$(arg arm)" unless="$(eval arg('config') !=0)" />
 		<param name="use_hand" type="bool" value="$(arg hand)" unless="$(eval arg('config') !=0)" />
