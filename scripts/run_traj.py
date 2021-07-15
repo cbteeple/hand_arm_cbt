@@ -79,19 +79,23 @@ class TrajRunner:
 
         # Read the trajectory configuration file
         self.filepath = os.path.join(filepath_traj)
-        self.filepath =   os.path.join(self.filepath,self.traj_profile)
+
+        if self.traj_profile.endswith(".traj"):
+            self.filepath = os.path.join(self.filepath,os.path.dirname(self.traj_profile))
+            self.in_files=[os.path.basename(self.traj_profile)]
+
+        else:
+            self.filepath =   os.path.join(self.filepath,self.traj_profile)
+            self.in_files = [f for f in os.listdir(self.filepath) if (os.path.isfile(os.path.join(self.filepath, f)) and f.endswith(".traj"))]
+            self.in_files.sort()
+            self.in_files=self.in_files[self.starting_index:]
+            
+            if self.DEBUG:
+                print("STARTING AT POSITION: %d"%(self.starting_index))
+
         self.save_data_folder = self.get_save_locations(os.path.join(filepath_config,'save_config.yaml'))
         self.save_folder_curr = None
 
-        
-
-        self.in_files = [f for f in os.listdir(self.filepath) if (os.path.isfile(os.path.join(self.filepath, f)) and f.endswith(".traj"))]
-
-        self.in_files.sort()
-        self.in_files=self.in_files[self.starting_index:]
-
-        if self.DEBUG:
-            print("STARTING AT POSITION: %d"%(self.starting_index))
 
         config_file =   os.path.join(self.filepath,self.in_files[0])
 
@@ -374,7 +378,6 @@ class TrajRunner:
 
     def go_to_start(self):
         print('Go To Start')
-        print(self.operation_sequence[0]['hand'])
         # Start the trajectories
         if self.use_hand:
             self.hand_sender.go_to_start(self.operation_sequence[0]['hand'], reset_time, blocking=False)

@@ -296,7 +296,8 @@ class PoseHandler():
         g.trajectory.joint_names = JOINT_NAMES
         g.trajectory.points = [
             JointTrajectoryPoint(positions=joints_pos, velocities=[0]*6, time_from_start=rospy.Duration(0.0)),
-            JointTrajectoryPoint(positions=pose_rad, velocities=[0]*6, time_from_start=rospy.Duration(time_duration))]
+            JointTrajectoryPoint(positions=pose_rad, velocities=[0]*6, time_from_start=rospy.Duration(time_duration)),
+            JointTrajectoryPoint(positions=pose_rad, velocities=[0]*6, time_from_start=rospy.Duration(time_duration+1.0))]
 
         try:
             self.arm_client.send_goal(g)

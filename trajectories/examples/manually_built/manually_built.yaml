@@ -19,7 +19,7 @@ sequence:
     # Define the trajectory subcomponents to use at the beginning
     startup:
         arm: pre
-        hand: startup}
+        hand: startup
 
 
 # Define arm trajectory subcomponents

@@ -21,7 +21,7 @@
 <arg name="fake" default="false" doc="Save data" />
 <arg name="debug" default="False" doc="Whether debug is on" />
 <arg name="id" default="" doc="Some output ID that will be appended to the data filename" />
-<arg name="use_checklist" default="true" doc="Ask for a success label after each rep" />
+<arg name="use_checklist" default="false" doc="Ask for a success label after each rep" />
 <arg name="hand_data_channel" default="pressure_controller" doc="Ask for a success label after each rep" />
 
 

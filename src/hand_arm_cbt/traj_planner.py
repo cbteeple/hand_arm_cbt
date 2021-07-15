@@ -57,9 +57,13 @@ class TrajPlanner:
 
         # Read the trajectory configuration file
         self.filepath = os.path.join(filepath_traj)
-        self.filepath =   os.path.join(self.filepath,self.traj_profile)
 
-        self.in_files = [f for f in os.listdir(self.filepath) if (os.path.isfile(os.path.join(self.filepath, f)) and f.endswith(".yaml"))]
+        if self.traj_profile.endswith(".yaml"):
+            self.filepath = os.path.join(self.filepath, os.path.dirname(self.traj_profile))
+            self.in_files = [os.path.basename(self.traj_profile)]
+        else:
+            self.filepath =   os.path.join(self.filepath,self.traj_profile)
+            self.in_files = [f for f in os.listdir(self.filepath) if (os.path.isfile(os.path.join(self.filepath, f)) and f.endswith(".yaml"))]
 
         with open(os.path.join(self.filepath,self.in_files[0]),'r') as f:
             # use safe_load instead of load
@@ -132,7 +136,7 @@ class TrajPlanner:
         if not self.settings.get('use_servo',True):
             self.traj_config['servo'] = {}
 
-        out_file =  in_file_name.replace('.yaml',"_planned.traj")
+        out_file =  in_file_name.replace('.yaml',".traj")
 
         if not os.path.exists(os.path.dirname(out_file)):
             try:
