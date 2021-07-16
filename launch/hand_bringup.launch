@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-	<!-- get the arguments from  -->
+	<!-- get the arguments from the user -->
 	<arg name="profile" default="default" doc="Configuration profile to use" />
 	<arg name="debug" default="false" doc="Whether debug is on" />
 	<arg name="plot_profile" default="2channels" doc="The plotting config profile" />

@@ -1,26 +1,20 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- Get the arguments from the user -->
+    <arg name="debug" default="False" doc="Whether debug is on" />
+    <arg name="suffix" default="servo" doc="Suffix to add to nodes" />
+    <arg name="hw_profile" default="serial_config" doc="The hardware config profile" />
+    <arg name="config_package" default="hand_arm" doc="The package where config profiles are stored" />
 
-
-<!-- To use this   -->
-
-<!-- get the arguments from  -->
-<arg name="debug" default="False" doc="Whether debug is on" />
-<arg name="suffix" default="servo" doc="Suffix to add to nodes" />
-<arg name="hw_profile" default="serial_config" doc="The hardware config profile" />
-<arg name="config_package" default="hand_arm" doc="The package where config profiles are stored" />
-
-
-<!-- Load controller settings -->
-  <group>
-  	<!-- Start the main serial sender -->
-  	<node name="pressure_control_server_node_$(arg suffix)" pkg="pressure_controller_ros" type="comm_handler.py" respawn="false"
-    	output="screen">
-    	<rosparam file="$(find hand_arm)/config/serial_config_ctrl2.yaml" command="load"/>
-      <param name="DEBUG" type="bool" value="$(arg debug)"/>
-      <arg name="hw_profile" value="$(arg hw_profile)"/>
-	    <arg name="config_package" value="$(arg config_package)"/>
-    </node>
-
-  </group>
+    <!-- Load the node -->
+    <group>
+        <!-- Start the main serial sender -->
+        <node name="pressure_control_server_node_$(arg suffix)" pkg="pressure_controller_ros" type="comm_handler.py" respawn="false"
+            output="screen">
+            <rosparam file="$(find hand_arm)/config/serial_config_ctrl2.yaml" command="load"/>
+            <param name="DEBUG" type="bool" value="$(arg debug)"/>
+            <arg name="hw_profile" value="$(arg hw_profile)"/>
+            <arg name="config_package" value="$(arg config_package)"/>
+        </node>
+    </group>
 </launch>
