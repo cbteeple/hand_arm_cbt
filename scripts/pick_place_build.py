@@ -58,7 +58,6 @@ class pickPlaceBuild:
             self.config = yaml.safe_load(f)
             f.close()
 
-        self.boomerang = self.config['settings']['boomerang']
         self.reset_object = self.config['settings'].get('reset_object', False)
         self.pattern_type = self.config['settings']['type']
 
@@ -427,7 +426,16 @@ class pickPlaceBuild:
                             hand_moves['grasp'].append(self.build_pressure_vec(row['pressure'], row['time']))
 
                         grasp_duration = grasp_traj[-1]['time']
-                        grasp_end      = grasp_traj[-1]['pressure']                           
+                        grasp_end      = grasp_traj[-1]['pressure']    
+                
+                elif grasp_type == 'trajectory':
+                    grasp_duration = self.config[channel]['grasp_sequence']['sequence'][-1]['time']
+
+                    for row in self.config[channel]['grasp_sequence']['sequence']:
+                        new_row = self.config[channel][row[act_kwd]]
+                        hand_moves['grasp'].append(self.build_pressure_vec(new_row, wait_before+row['time']))
+
+                    grasp_end= self.config[channel][self.config[channel]['grasp_sequence']['sequence'][-1][act_kwd]]
 
                 else:
                     grasp_duration = self.config[channel]['grasp_sequence'][-1]['time']

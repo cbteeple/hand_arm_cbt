@@ -4,6 +4,7 @@ context:
 
 variables:
   grasp_pressure: 20    #[psi]
+  idle_pressure: -5
   twist_offset: 5       #[psi]
   retract_fraction: 0.5       #[psi]
 

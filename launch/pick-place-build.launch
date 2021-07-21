@@ -4,7 +4,7 @@
     <arg name="traj" doc="Configuration profile to use" />
 
     <!-- Load the node -->
-    <node name="pick_and_place_builder_node" pkg="hand_arm" type="pick_place_build_multi.py" respawn="false"
+    <node name="pick_and_place_builder_node" pkg="hand_arm" type="pick_place_build.py" respawn="false"
     	output="screen">
       	<param name="traj_profile" type="str" value="$(arg traj)" />
     </node>

@@ -5,6 +5,7 @@ bash pick-place-build-plan.sh demos/pick_place_back_forth
 bash pick-place-build-plan.sh demos/pick_place_back_forth_up
 bash pick-place-build-plan.sh demos/pick_place_back_forth_rot
 bash pick-place-build-plan.sh demos/pick_place_back_forth_rotgait
+bash pick-place-build-plan.sh demos/pick_place_back_forth_rotgait2
 bash pick-place-build-plan.sh demos/pick_place_back_forth_square
 bash pick-place-build-plan.sh demos/write_name
 
@@ -16,10 +17,11 @@ roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_
 roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth_rot  use_checklist:=false  save:=false  reps:=1
 
 roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth_rotgait  use_checklist:=false  save:=false  reps:=1
+roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth_rotgait2  use_checklist:=false  save:=false  reps:=1
 
 roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth_square  use_checklist:=false  save:=false  reps:=1
 
-roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/write_name  use_checklist:=false  save:=false  reps:=1
+roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/write_name  use_checklist:=false  save:=false  reps:=1 speed_factor:=0.5
 
 roslaunch hand_arm pick-place-run-multi.launch  config:=arm_hand.yaml  id:=TEST_DEMO  traj:=demos/pick_place_back_forth_up  use_checklist:=false  save:=false  reps:=1 fake:=true
 
