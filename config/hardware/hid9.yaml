@@ -1,0 +1,13 @@
+# ROS node settings
+traj_server_rate: 200 # Should be 200 Hz or less for HID comms
+data_channel: "pressure_control"
+use_traj_server: True
+
+# HID device info
+devices:
+  - vendor_id: 5824
+    product_id: 1158
+    serial_number: 7844280
+    num_channels: 9
+    cmd_spec: '2.1'
+    cmd_format: '%0.2f'
