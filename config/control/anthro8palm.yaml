@@ -1,7 +1,7 @@
 # Channels - turn them on or off
 channels:
     num_channels: 9
-    states: [1,1,0,0, 1,1,0,0, 1]
+    states: [1,1,1,1, 1,1,1,1, 1]
 
 
 # Loop time for outputting data.
@@ -19,7 +19,7 @@ PID:
     values: [0.09, 1.5, 0] #[0.1000, 0.0010, 0.0010]
 
 # Valve PWM offsets (set between 0 and 255 for the source and vent valves)
-valve_offsets: [[218, 226], [221, 232], [225, 225], [227, 226], [217, 223], [224, 231], [218, 218], [231, 223], [221, 217]]
+valve_offsets: [[218, 226], [221, 232], [234, 222], [227, 226], [217, 223], [224, 231], [218, 218], [231, 223], [221, 217]]
     
 # Set the max and min pressures in software [psi]
 #   If single value, then it will be set for all channels
