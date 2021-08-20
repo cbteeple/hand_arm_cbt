@@ -104,6 +104,33 @@ class Teacher:
             self.hand['startup'] = [self.release_traj[0]]
 
             self.hand_sender.go_to_start(self.release_traj, reset_time=2.0, blocking=False)
+        
+        elif 'dynamixel' in self.hand_type:
+            grasp_width = float(raw_input("Enter grasping width (0.0 - 30.0, default=0.0 mm): ") or "0.0")
+            grasp_speed = int(raw_input("Enter grasping speed (0 - 1023, default=1023): ") or "1023")
+            grasp_force = int(raw_input("Enter grasping force (0 - 1023, default=1023): ") or "1023")
+
+            from dynamixel_gripper_control.dynamixel_trajectory import trajSender as dynamixel_traj_sender
+            self.hand_sender = dynamixel_traj_sender()
+            self.hand_sender.DEBUG = False
+
+            import dynamixel_gripper_control.msg as hand_msg
+            self.grasp_traj_send = hand_msg.TrajectoryGoal()
+            self.grasp_traj_send.trajectory = hand_msg.Trajectory()
+            self.grasp_traj_send.trajectory.points.append(hand_msg.TrajectoryPoint(pos=grasp_width, speed=grasp_speed, force=grasp_force, time_from_start=rospy.Duration.from_sec(0.5)))
+
+            self.release_traj_send = hand_msg.TrajectoryGoal()
+            self.release_traj_send.trajectory = hand_msg.Trajectory()
+            self.release_traj_send.trajectory.points.append(hand_msg.TrajectoryPoint(pos=30, speed=grasp_speed, force=grasp_force, time_from_start=rospy.Duration.from_sec(0.5)))
+
+            self.grasp_traj = [ [0.5, grasp_width, grasp_speed, grasp_force ] ]
+            self.release_traj = [ [0.5, 30, grasp_speed, grasp_force ] ]
+
+            self.hand['grasp'] = self.grasp_traj
+            self.hand['release'] = self.release_traj
+            self.hand['startup'] = [self.release_traj[0]]
+
+            self.hand_sender.go_to_start(self.release_traj, reset_time=2.0, blocking=False)
 
 
         elif 'pressure' in self.hand_type:
@@ -182,8 +209,11 @@ class Teacher:
         self.joint_traj[self.curr_segment_name].append(curr_jp)
 
         try: 
+            print("GRASPING")
             self.hand_sender.execute_traj(self.grasp_traj_send, blocking=False)
+            print("WAITING FOR GRASPING RESULT")
             self.hand_sender.traj_client.wait_for_result()
+            print("FINISHED GRASPING")
         except:
             raise
 
@@ -346,6 +376,9 @@ def main(file_name=None, flags=""):
         if "robotiq" in flags:
             hand_type='robotiq'
             print("Using Robotiq Hand")
+        elif "dynamixel" in flags:
+            hand_type='dynamixel'
+            print("Using Dynamixel Gripper")
         else:
             hand_type = 'pressure'
 

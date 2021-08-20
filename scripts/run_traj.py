@@ -34,6 +34,7 @@ from datetime import datetime
 from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
 from hand_arm_cbt.arm_mover import trajSender as ur_traj_sender
 from robotiq_trajectory_control.robotiq_2f_trajectory import trajSender as robotiq_traj_sender
+from dynamixel_gripper_control.dynamixel_trajectory import trajSender as dynamixel_traj_sender
 from hand_arm_cbt.arm_moveit import MoveItPythonInteface as ur_traj_sender_moveit
 import rosbag_recorder.srv as rbr
 import video_recorder.srv as vrec
@@ -138,11 +139,18 @@ class TrajRunner:
                 self.hand_sender.DEBUG=self.DEBUG
             elif setup['hand_traj_space'] == 'robotiq':
                 if self.DEBUG:
-                    print("getting for robotiq hand traj server")
+                    print("getting robotiq hand traj server")
                 self.hand_sender = robotiq_traj_sender(self.speed_factor)
                 self.hand_sender.DEBUG=self.DEBUG
                 if self.DEBUG:
                     print("waiting for robotiq hand traj server")
+            elif setup['hand_traj_space'] == 'dynamixel':
+                if self.DEBUG:
+                    print("getting dynamixel hand traj server")
+                self.hand_sender = dynamixel_traj_sender(self.speed_factor)
+                self.hand_sender.DEBUG=self.DEBUG
+                if self.DEBUG:
+                    print("waiting for dynamixel hand traj server")
             else:
                 if self.DEBUG:
                     print('Nonstandard hand trajectory space')
@@ -524,7 +532,7 @@ class TrajRunner:
 
         if self.use_hand:
             print('Stopping hand controller')
-            self.hand_sender.shutdown(reset_pressures='resting')
+            self.hand_sender.shutdown(reset='resting')
             #self.hand_sender.shutdown(reset_pressures=[2,0])
             print('-Stopped hand controller')
         

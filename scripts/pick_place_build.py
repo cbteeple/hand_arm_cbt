@@ -69,7 +69,7 @@ class pickPlaceBuild:
         self.min_p  = self.config['hand'].get("min_pressure", -np.inf)
         self.hand_type=self.config['hand'].get('type','pressure_controlled')
 
-        skill_context = rospy.get_param('/config_node/profile_name')
+        skill_context = rospy.get_param('/config_node/profile_name',[])
         self.skill_builder = SkillBuilder(context=skill_context,skill_package='hand_arm', skill_folder='hand_skills')
 
 
@@ -240,6 +240,8 @@ class pickPlaceBuild:
         sequence['setup']['arm_traj_space']  = 'cartesian'
         if 'robotiq' in self.hand_type:
             sequence['setup']['hand_traj_space'] = 'robotiq'
+        elif 'dynamixel' in self.hand_type:
+            sequence['setup']['hand_traj_space'] = 'dynamixel'
         else:
             sequence['setup']['hand_traj_space'] = 'pressure'
 
@@ -383,7 +385,7 @@ class pickPlaceBuild:
         grasp_duration = self.config[channel].get('grasp_time',0.0)
         wait_after  = self.config[channel].get('wait_after_grasp',0.0)
 
-        if 'robotiq' in self.hand_type:
+        if 'robotiq' in self.hand_type or 'dynamixel' in self.hand_type:
             self.keylist = ['pos','speed','force']
             idle  = self.config[channel]['idle_pos']
             grasp = self.config[channel]['grasp_pos']
@@ -401,7 +403,7 @@ class pickPlaceBuild:
             act_kwd = 'pressure'
             
 
-        if 'robotiq' not in self.hand_type:
+        if 'robotiq' not in self.hand_type and 'dynamixel' not in self.hand_type:
             # Build the grasping move
             grasp_sequence = self.config[channel].get('grasp_sequence',None)
 
@@ -461,40 +463,40 @@ class pickPlaceBuild:
             if wait_after >0:
                 hand_moves['grasp'].append(self.build_pressure_vec(grasp_end, wait_before+grasp_duration+wait_after))
 
-        # Build the manipulation move
-        manip_sequence = self.config[channel].get('manip_sequence',None)
+            # Build the manipulation move
+            manip_sequence = self.config[channel].get('manip_sequence',None)
 
-        manip_duration = 0.0
-        if manip_sequence is not None:
-            manip_type=manip_sequence.get('type', None)
-            hand_moves['manip'] = []
+            manip_duration = 0.0
+            if manip_sequence is not None:
+                manip_type=manip_sequence.get('type', None)
+                hand_moves['manip'] = []
 
-            if manip_type == 'skill':
-                manip_skills = manip_sequence.get('sequence', [])
+                if manip_type == 'skill':
+                    manip_skills = manip_sequence.get('sequence', [])
 
-                if len(manip_skills)>0:
-                    manip_traj = self.build_skill_sequence(manip_skills)
-                    # Convert trajectory to correct format
-                    for row in manip_traj:
-                        hand_moves['manip'].append(self.build_pressure_vec(row['pressure'], row['time']))
-                        
-                    manip_duration = manip_traj[-1]['time']
-                    grasp_end      = manip_traj[-1]['pressure']
+                    if len(manip_skills)>0:
+                        manip_traj = self.build_skill_sequence(manip_skills)
+                        # Convert trajectory to correct format
+                        for row in manip_traj:
+                            hand_moves['manip'].append(self.build_pressure_vec(row['pressure'], row['time']))
+                            
+                        manip_duration = manip_traj[-1]['time']
+                        grasp_end      = manip_traj[-1]['pressure']
 
-            else:
-                num_reps=int(self.config[channel].get('manip_repeat',1))
+                else:
+                    num_reps=int(self.config[channel].get('manip_repeat',1))
 
-                manip_duration = self.config[channel]['manip_sequence'][-1]['time']
+                    manip_duration = self.config[channel]['manip_sequence'][-1]['time']
 
-                first_point = self.config[channel]['manip_sequence'][0]
-                self.config[channel]['manip_sequence'].pop(0)
+                    first_point = self.config[channel]['manip_sequence'][0]
+                    self.config[channel]['manip_sequence'].pop(0)
 
-                hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][first_point[act_kwd]], first_point['time']))
-                for rep in range(num_reps):
-                    for row in self.config[channel]['manip_sequence']:
-                        hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][row[act_kwd]], rep*manip_duration+row['time']))    
+                    hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][first_point[act_kwd]], first_point['time']))
+                    for rep in range(num_reps):
+                        for row in self.config[channel]['manip_sequence']:
+                            hand_moves['manip'].append(self.build_pressure_vec(self.config[channel][row[act_kwd]], rep*manip_duration+row['time']))    
 
-                grasp_end = self.config[channel][row[act_kwd]]  
+                    grasp_end = self.config[channel][row[act_kwd]]  
 
 
         wait_before = self.config[channel].get('wait_before_release',0.0)
@@ -502,44 +504,57 @@ class pickPlaceBuild:
         wait_after  = self.config[channel].get('wait_after_release',0.0)
 
         # Build the release move
-        release_sequence = self.config[channel].get('release_sequence',None)
-
-        if release_sequence is not None:
-            release_type=release_sequence.get('type', None)
-            hand_moves['release'] = []
-
-            if release_type == 'skill':
-                release_skills = release_sequence.get('sequence', [])
-
-                if len(release_skills)>0:
-                    
-                    release_traj = self.build_skill_sequence(release_skills)
-
-                    if wait_before >0:
-                        hand_moves['release'] =  [self.build_pressure_vec(release_traj[0]['pressure'], release_traj[0]['time'])]
-                        release_traj = self.skill_builder.adjust_points(release_traj,wait_before)
-
-                    # Convert trajectory to correct format
-                    for row in release_traj:
-                        hand_moves['release'].append(self.build_pressure_vec(row['pressure'], row['time']))
-
-                    if wait_after >0:
-                        hand_moves['release'].append(self.build_pressure_vec(row['pressure'], wait_before+row['time']+wait_after))
-                        
+        if 'robotiq' in self.hand_type or 'dynamixel' in self.hand_type:
+            # Build release move
+            hand_moves['release']=[]
+            if wait_before>0.0:
+                hand_moves['release'].append(self.build_pressure_vec(grasp_end, wait_before))
+            
+            hand_moves['release'].append(self.build_pressure_vec(idle, wait_before+grasp_duration))
+            hand_moves['release'].append(self.build_pressure_vec(idle, wait_before+grasp_duration+wait_after))
+            # Build the startup move
+            hand_moves['startup'] = [self.build_pressure_vec(initial, 0.0), 
+                                    self.build_pressure_vec(initial, 0.0)]
 
         else:
-            idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]           
+            release_sequence = self.config[channel].get('release_sequence',None)
 
-            hand_moves['release']= [self.build_pressure_vec(grasp_end, 0.0), 
-                                    self.build_pressure_vec(grasp_end, wait_before),
-                                    self.build_pressure_vec(idle, wait_before+grasp_duration), 
-                                    self.build_pressure_vec(idle, wait_before+grasp_duration+wait_after)]
+            if release_sequence is not None:
+                release_type=release_sequence.get('type', None)
+                hand_moves['release'] = []
 
-        # Build the startup move
-        idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]  
-        initial = [ float(x) for x in self.config[channel].get('initial_pressure',idle) ]
-        hand_moves['startup'] = [self.build_pressure_vec(initial, 0.0), 
-                                 self.build_pressure_vec(initial, 0.0)]
+                if release_type == 'skill':
+                    release_skills = release_sequence.get('sequence', [])
+
+                    if len(release_skills)>0:
+                        
+                        release_traj = self.build_skill_sequence(release_skills)
+
+                        if wait_before >0:
+                            hand_moves['release'] =  [self.build_pressure_vec(release_traj[0]['pressure'], release_traj[0]['time'])]
+                            release_traj = self.skill_builder.adjust_points(release_traj,wait_before)
+
+                        # Convert trajectory to correct format
+                        for row in release_traj:
+                            hand_moves['release'].append(self.build_pressure_vec(row['pressure'], row['time']))
+
+                        if wait_after >0:
+                            hand_moves['release'].append(self.build_pressure_vec(row['pressure'], wait_before+row['time']+wait_after))
+                            
+
+            else:
+                idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]           
+
+                hand_moves['release']= [self.build_pressure_vec(grasp_end, 0.0), 
+                                        self.build_pressure_vec(grasp_end, wait_before),
+                                        self.build_pressure_vec(idle, wait_before+grasp_duration), 
+                                        self.build_pressure_vec(idle, wait_before+grasp_duration+wait_after)]
+
+            # Build the startup move
+            idle  = [ float(x) for x in self.config[channel]['idle_pressure'] ]  
+            initial = [ float(x) for x in self.config[channel].get('initial_pressure',idle) ]
+            hand_moves['startup'] = [self.build_pressure_vec(initial, 0.0), 
+                                    self.build_pressure_vec(initial, 0.0)]
 
 
         if self.reset_object:
@@ -612,7 +627,7 @@ class pickPlaceBuild:
         else:
             min_p = [self.min_p]*len(pressures)
 
-        if ('robotiq' in self.hand_type):
+        if ('robotiq' in self.hand_type or 'dynamixel' in self.hand_type):
             pressure_out=self.dict_to_list(pressures,self.keylist)
 
         else:
