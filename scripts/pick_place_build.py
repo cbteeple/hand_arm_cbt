@@ -135,12 +135,25 @@ class pickPlaceBuild:
         self.prep_directory(self.filepath_out_dir)
 
         if self.pattern_type == 'grid':
+            shift_initial_pose = self.config['arm']['grid'].get('affects_initial_pose',True)
             shift_release_pose = self.config['arm']['grid'].get('affects_release_pose',True)
 
             for entry, release_entry in zip(self.perturbations, self.release_perturbations):
                 
                 # Update with current perturbation
                 curr_config = copy.deepcopy(base_config)
+
+                if shift_initial_pose:
+                    if isinstance(curr_config['arm']['initial_pose'], list):
+                        for row_idx, row in enumerate(curr_config['arm']['initial_pose']):
+                            for axis_idx, axis in enumerate(row['position']):
+                                curr_config['arm']['initial_pose'][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
+
+                    else:
+                        for idx, axis in enumerate(curr_config['arm']['initial_pose']['position']):
+                            curr_config['arm']['initial_pose']['position'][idx] = axis + entry[idx]
+
+
 
                 if isinstance(curr_config['arm']['grasp_pose'], list):
                     for row_idx, row in enumerate(curr_config['arm']['grasp_pose']):
@@ -157,9 +170,9 @@ class pickPlaceBuild:
                         for row_idx, row in enumerate(curr_config['arm']['release_pose']):
                             for axis_idx, axis in enumerate(row['position']):
                                 curr_config['arm']['release_pose'][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
-                else:
-                    for idx, axis in enumerate(curr_config['arm']['release_pose']['position']):
-                        curr_config['arm']['release_pose']['position'][idx] = axis + release_entry[idx]
+                    else:
+                        for idx, axis in enumerate(curr_config['arm']['release_pose']['position']):
+                            curr_config['arm']['release_pose']['position'][idx] = axis + release_entry[idx]
 
                 self.build_moves(curr_config)
 
@@ -386,7 +399,7 @@ class pickPlaceBuild:
         wait_after  = self.config[channel].get('wait_after_grasp',0.0)
 
         if 'robotiq' in self.hand_type or 'dynamixel' in self.hand_type:
-            self.keylist = ['pos','speed','force']
+            self.keylist = ['pos','speed','force', 'continuous']
             idle  = self.config[channel]['idle_pos']
             grasp = self.config[channel]['grasp_pos']
             initial = self.config[channel].get('initial_pos')
@@ -395,9 +408,21 @@ class pickPlaceBuild:
             hand_moves['grasp']= []
             if wait_before>0.0:
                 hand_moves['grasp'].append(self.build_pressure_vec(initial, 0.0))
-            hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration))
-            hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration+wait_after))
-            grasp_end= grasp
+
+            grasp_sequence = self.config[channel].get('grasp_sequence',None)
+            if grasp_sequence is not None:
+                grasp_duration = self.config[channel]['grasp_sequence']['sequence'][-1]['time']
+
+                for row in self.config[channel]['grasp_sequence']['sequence']:
+                    new_row = self.config[channel][row[act_kwd]]
+                    hand_moves['grasp'].append(self.build_pressure_vec(new_row, wait_before+row['time']))
+
+                grasp_end= self.config[channel][self.config[channel]['grasp_sequence']['sequence'][-1][act_kwd]]
+            
+            else:
+                hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration))
+                hand_moves['grasp'].append(self.build_pressure_vec(grasp, wait_before+grasp_duration+wait_after))
+                grasp_end= grasp
         
         else:
             act_kwd = 'pressure'
