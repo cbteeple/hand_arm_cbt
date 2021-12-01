@@ -6,7 +6,7 @@ use_traj_server: True
 # Serial device info
 devices:
   - devname: /dev/ttyACM0
-    baudrate: 2000000 #115200
+    baudrate: 115200 #115200
     num_channels: 8
     cmd_spec: '2.1'
     cmd_format: '%0.2f'

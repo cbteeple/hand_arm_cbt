@@ -385,7 +385,7 @@ class TrajRunner:
 
 
     def go_to_start(self):
-        print('Go To Start')
+        #print('Go To Start')
         # Start the trajectories
         if self.use_hand:
             self.hand_sender.go_to_start(self.operation_sequence[0]['hand'], reset_time, blocking=False)
@@ -463,7 +463,7 @@ class TrajRunner:
 
 
     def excecute_sequence(self):
-        print('Excecute Sequence')
+        #print('Excecute Sequence')
         for plan in self.operation_plans:
             if (plan['hand'] is not None) and (self.use_hand):
                 self.hand_sender.execute_traj(plan['hand'], blocking=False)
@@ -506,8 +506,20 @@ class TrajRunner:
             # get user input about the success or failure of the trial
             if self.use_checklist:
                 inp=None
-                while (type(inp) != int):
-                    inp = input("Was the trial successful? (0,1,2...9) ")
+                inp_curr=None
+                while inp is None:
+                    try: 
+                        inp_new = raw_input("Mark the trial (use numbers or text) ")
+                        if inp_new and inp_new.strip():
+                            inp = inp_new
+                        else:
+                            print("You entered an empty input. Please use numbers or text")
+                    except KeyboardInterrupt:
+                        raise
+                    except:
+                        raise
+                        
+
 
                 self.mark_success(inp)
 
@@ -518,9 +530,9 @@ class TrajRunner:
 
     def mark_success(self,success):
         
-        print("Trial Marked: %d"%(success))
+        #print("Trial Marked: %s"%(success))
         out = success
-        out_str ="%s,%d,%d\n"%(self.curr_file.replace('.traj',''), self.curr_rep, out)
+        out_str ="%s,%d,%s\n"%(self.curr_file.replace('.traj',''), self.curr_rep, out)
         with open(self.success_filename,'a') as f:
             f.write(out_str)
 
