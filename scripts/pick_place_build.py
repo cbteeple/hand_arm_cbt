@@ -123,7 +123,6 @@ class pickPlaceBuild:
         self.create_traj_pattern()
 
         self.trajectory_built = {}
-        self.build_sequence()
         self.build_grasp('hand')
         if self.use_servo:
             self.build_grasp('servo')
@@ -175,6 +174,7 @@ class pickPlaceBuild:
                             curr_config['arm']['release_pose']['position'][idx] = axis + release_entry[idx]
 
                 self.build_moves(curr_config)
+                self.build_sequence()
 
                 out_file =   os.path.join(self.filepath_out_dir,"pos_"+"%04d"%(perturb_num)+'.yaml')
 
@@ -184,6 +184,7 @@ class pickPlaceBuild:
 
         else:
             self.build_moves(base_config)
+            self.build_sequence()
             out_file =   os.path.join(self.filepath_out_dir,"pos_"+"%04d"%(0)+'.yaml')
             self.save_traj(out_file)
 
