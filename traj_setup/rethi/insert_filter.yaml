@@ -11,12 +11,10 @@ arm:
 
   initial_pose:
     position: [0.55, 0.30, 0.20]
-    orientation: [0,90,0]
+    orientation: [0,80,0]
 
   grasp_pose:
-    - position: [0.55, 0.30, 0.20]
-      orientation: [0,90,0]
-    - position: [0.55, 0.30, 0.065]
+    - position: [-0.04901349000000001, 0.25, 0.65879705]
       orientation: [0,90,0]
 
   #manip_pose_before:
@@ -34,7 +32,7 @@ arm:
 
 
   release_pose:
-    position: [0.55, 0.30, 0.060]
+    position: [-0.20605565400000003, 0.25, 0.49487485100000006]
     orientation: [0,90,0]
 
   final_pose:
