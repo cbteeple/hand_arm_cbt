@@ -303,6 +303,7 @@ class pickPlaceBuild:
             ops.append({'arm': False, 'hand': 'manip', 'servo': False})
         elif arm_manip:
             ops.append({'arm': 'manip_seq_before', 'hand': False, 'servo': False})
+            ops.extend(self.extra_manip_sequence)
             ops.append({'arm': 'manip', 'hand': False, 'servo': False})
             ops.append({'arm': 'manip_seq_after', 'hand': False, 'servo': False})
         
@@ -823,26 +824,43 @@ class pickPlaceBuild:
 
             if manip_type == 'trajectory':
                 manip_traj = manip_args['trajectory']
-                manip_sequence = manip_args['sequence']
+                manip_sequence = manip_args.get('sequence',None)
+                manip_moves = manip_args.get('moves',None)
 
                 manip_file =   os.path.join(os.path.dirname(self.config_file),manip_traj)
                 with open(manip_file,'r') as f:
                     # use safe_load instead of load
                     manip_config = yaml.safe_load(f)
                 
-                manip_move = []
-                keylist = list(manip_config.keys())
+                # If we provide a list of moves to import, handle that
+                if isinstance(manip_sequence,list):
+                    manip_move = []
+                    keylist = list(manip_config.keys())
 
-                for move in manip_sequence:
-                    if not (move in keylist):
-                        raise ValueError("Arm manipulation sequence contains moves that are not defined")
+                    for move in manip_sequence:
+                        if not (move in keylist):
+                            raise ValueError("Arm manipulation sequence contains moves that are not defined")
 
-                for move in manip_sequence:
-                    manip_move.extend(manip_config[move])
+                    # Make one long move
+                    for move in manip_sequence:
+                        manip_move.extend(manip_config[move])
 
-                arm_moves['manip'] = manip_move
-                arm_moves['manip_seq_before'] = [manip_move[0]]
-                arm_moves['manip_seq_after'] = [manip_move[-1]]
+                    # add this move to the manipulation moves
+                    arm_moves['manip'] = manip_move
+                    arm_moves['manip_seq_before'] = [manip_move[0]]
+                    arm_moves['manip_seq_after'] = [manip_move[-1]]
+
+                # NEW FEATURE HERE!
+                elif isinstance(manip_sequence,str):
+                    sequence = manip_config.get(manip_sequence,'sequence')
+                    moves = manip_config.get(manip_moves,'arm')
+
+                    self.extra_manip_sequence = sequence
+
+                    for key in moves:
+                        arm_moves[key] = moves[key]
+
+                    
 
             if arm_moves.get('manip_before',None) is not None:
                 arm_moves['manip_seq_before'].insert(0, arm_moves['manip_before'][-1])

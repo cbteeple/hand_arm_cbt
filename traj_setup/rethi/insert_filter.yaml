@@ -1,0 +1,118 @@
+settings:
+  boomerang: true
+  reset_object: false
+  type: grid # options: single, grid
+  use_arm: True
+  use_hand: True
+
+  # Ignore arm settings. They are unused.
+arm:
+  orientation_type: 'degrees' # options: 'quaterions', 'radians, 'degrees'
+
+  initial_pose:
+    position: [0.55, 0.30, 0.20]
+    orientation: [0,90,0]
+
+  grasp_pose:
+    - position: [0.55, 0.30, 0.20]
+      orientation: [0,90,0]
+    - position: [0.55, 0.30, 0.065]
+      orientation: [0,90,0]
+
+  #manip_pose_before:
+  #  - position: [0.55, 0.30, 0.25]
+  #    orientation: [0,90,0]
+  #  - position: [0.3, 0.40, 0.25]
+  #    orientation: [0, 90,0]
+
+
+  #manip_pose_after:
+  #  - position: [0.3, 0.40, 0.25]
+  #    orientation: [0, 90,0]
+  #  - position: [0.55, 0.30, 0.25]
+  #    orientation: [0,90,0]
+
+
+  release_pose:
+    position: [0.55, 0.30, 0.060]
+    orientation: [0,90,0]
+
+  final_pose:
+    position: [0.55, 0.30, 0.20]
+    orientation: [0,90,0]
+
+
+  pickup:
+    type: to_pose # square, triangle, to_pose
+    args:
+      before: 'manip_pose_before'
+      after: 'manip_pose_after'
+
+  manip_sequence:
+    type: 'trajectory'
+    args:
+      trajectory: 'tasks/flip_handle.yaml'
+      sequence:   'sequence'
+      moves:   'arm'
+
+  grid:
+    # Number of points on each side [number] in (x, y, z) order
+    num_pts: [1,1,1]  #to make cm-spaced grid points add one (for example, 0.20/0.01 = 20 segments, with 21 points total)
+
+    # Dimension of each grid side [meters] in (x, y, z) order
+    dims: [0,0,0]
+    release_dims: [0,0,0]
+
+    # Basis shifting (maybe you don't want the ref frame to be the robot's home frame)
+    # Use quaternions?
+    basis: []
+
+    affects_release_pose: True
+
+
+
+hand:
+  num_channels: 8
+  max_pressure: 35
+  min_pressure: -50
+
+  idle_pressure:    [0,0,  0,0,    0,0,    0,0]  #[psi]
+
+
+  grasp_sequence:
+    type: 'skill'
+    sequence:
+      # Grasp the object with 4 fingers at a pressure of 25 psi
+      - skill: 'simple/grasp_pinch'
+        vars:  {grasp_pressure: 25, idle_pressure: 0, pinch_pressure: 21}
+        times: {main: 2.0}
+        main_repeat: 1
+
+  # Decide when to start the grasp compared to when the arm moves.
+  grasp_start: "during" #options: "after", "during"
+  wait_before_grasp: 1.0    #[sec]
+  wait_after_grasp: 0.0    #[sec]
+  #grasp_time: 0.2    #[sec]
+ 
+
+  #manip_sequence:
+
+
+
+  release_sequence:
+    type: 'skill'
+    sequence:
+      # Release the grasp and wait at idle for 1 second
+      - skill: 'simple/release_pinch'
+        vars:  {grasp_pressure: 25, idle_pressure: 0, pinch_pressure: 21}
+        times: {main: 1.0}
+        main_repeat: 1
+      - skill: 'simple/idle'
+        vars:  {idle_pressure: 0}
+        times: {main: 1.0}
+        main_repeat: 1
+
+  release_start: "after" #options: "after", "during"
+  wait_before_release: 0.0   #[sec]
+  wait_after_release: 0.0    #[sec]
+  #release_time:       1.0    #[sec]
