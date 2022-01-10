@@ -321,28 +321,39 @@ class MoveItPythonInteface(object):
 
 
 
-    def plan_cartesian_path(self, waypoints, from_last = False):     
+    def plan_cartesian_path(self, waypoints, from_last = False, last_state=None):     
         # We want the Cartesian path to be interpolated at a resolution of 1 cm
         # which is why we will specify 0.01 as the eef_step in Cartesian
         # translation.  We will disable the jump threshold by setting it to 0.0,
         # ignoring the check for infeasible jumps in joint space, which is sufficient
         # for this tutorial.
 
-        '''
         if from_last:
-            if self.last_state:
-                self.move_group.set_start_state(self.last_state)
+            if last_state is not None:
+                start_pos = self.last_state
+            elif self.last_state:
+                start_pos = self.last_state
             else:
-                self.move_group.set_start_state_to_current_state()
-        else:
-            self.move_group.set_start_state_to_current_state()
-        '''
-        self.move_group.set_joint_value_target(waypoints[0])
-        plan = self.move_group.plan()
+                print("Initial position inferred from trajectory")
+                start_pos1 = self.robot.get_current_state()
+                #self.move_group.set_joint_value_target(waypoints[0])
+                self.move_group.set_start_state(start_pos1)
 
-        start_pos = self.robot.get_current_state()
-        start_pos.joint_state.position=plan.joint_trajectory.points[-1].positions
-        start_pos.joint_state.velocity=[0]*6
+                start_pose1 = self.move_group.get_current_pose()
+                #self.move_group.set_joint_value_target(start_pos1)
+                #plan = self.move_group.plan()
+
+                (plan, fraction) = self.move_group.compute_cartesian_path([start_pose1.pose,waypoints[0]],   # waypoints to follow
+                                                                             0.01,        # eef_step
+                                                                             0.0) 
+
+                start_pos = self.robot.get_current_state()
+                start_pos.joint_state.position=plan.joint_trajectory.points[-1].positions
+                start_pos.joint_state.velocity=[0]*6
+        else:
+            start_pos = self.robot.get_current_state()
+                    
+        
         self.move_group.set_start_state(start_pos)
         
         (plan, fraction) = self.move_group.compute_cartesian_path(

@@ -73,7 +73,6 @@ class pickPlaceBuild:
         self.skill_builder = SkillBuilder(context=skill_context,skill_package='hand_arm', skill_folder='hand_skills')
 
 
-
     def create_traj_pattern(self):
 
         # Make a grid if that's what the file says to do
@@ -116,7 +115,42 @@ class pickPlaceBuild:
 
 
 
+    def validate_arm_moves(self):
+        if not self.trajectory_built:
+            return
 
+        arm_moves = self.trajectory_built['arm']
+        ops = copy.deepcopy(self.trajectory_built['sequence']['operations'])
+
+        # Get the index where "pre" is located
+        pre_idx=0
+        for i,op in enumerate(ops):
+            if op['arm'] == 'pre':
+                pre_idx = i
+
+        # Fix opertations where arm motions are undefined
+        first_op = None
+        for op in ops:
+            curr_move_name = op['arm']
+            if not (op['arm'] in arm_moves):
+                op['arm'] = False
+                continue
+            if first_op is None:
+                first_op = copy.deepcopy(op['arm'])
+        
+        # Fix initializer
+        if arm_moves.get('pre',None) is None:
+            initial_pose = arm_moves[first_op][0]
+            arm_moves['pre']= [copy.deepcopy(initial_pose),
+                               copy.deepcopy(initial_pose)]
+        
+        ops[pre_idx]['arm'] = 'pre'
+
+
+
+        self.trajectory_built['sequence']['operations'] = ops
+
+        
 
 
     def build_traj(self):
@@ -136,55 +170,82 @@ class pickPlaceBuild:
         if self.pattern_type == 'grid':
             shift_initial_pose = self.config['arm']['grid'].get('affects_initial_pose',True)
             shift_release_pose = self.config['arm']['grid'].get('affects_release_pose',True)
+            shift_entire_traj = self.config['arm']['grid'].get('shift_entire_trajectory',False)
 
-            for entry, release_entry in zip(self.perturbations, self.release_perturbations):
-                
-                # Update with current perturbation
-                curr_config = copy.deepcopy(base_config)
-
-                if shift_initial_pose:
-                    if isinstance(curr_config['arm']['initial_pose'], list):
-                        for row_idx, row in enumerate(curr_config['arm']['initial_pose']):
-                            for axis_idx, axis in enumerate(row['position']):
-                                curr_config['arm']['initial_pose'][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
-
-                    else:
-                        for idx, axis in enumerate(curr_config['arm']['initial_pose']['position']):
-                            curr_config['arm']['initial_pose']['position'][idx] = axis + entry[idx]
-
-
-
-                if isinstance(curr_config['arm']['grasp_pose'], list):
-                    for row_idx, row in enumerate(curr_config['arm']['grasp_pose']):
-                        for axis_idx, axis in enumerate(row['position']):
-                            curr_config['arm']['grasp_pose'][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
-
-                else:
-                    for idx, axis in enumerate(curr_config['arm']['grasp_pose']['position']):
-                        curr_config['arm']['grasp_pose']['position'][idx] = axis + entry[idx]
-
-
-                if shift_release_pose:
-                    if isinstance(curr_config['arm']['release_pose'], list):
-                        for row_idx, row in enumerate(curr_config['arm']['release_pose']):
-                            for axis_idx, axis in enumerate(row['position']):
-                                curr_config['arm']['release_pose'][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
-                    else:
-                        for idx, axis in enumerate(curr_config['arm']['release_pose']['position']):
-                            curr_config['arm']['release_pose']['position'][idx] = axis + release_entry[idx]
-
-                self.build_moves(curr_config)
+            if shift_entire_traj:
+                self.build_moves(base_config)
                 self.build_sequence()
+                self.validate_arm_moves()
+                
+                init_arm = copy.deepcopy(self.trajectory_built['arm'])
+                for entry, release_entry in zip(self.perturbations, self.release_perturbations):
+                    curr_arm = copy.deepcopy(init_arm)
 
-                out_file =   os.path.join(self.filepath_out_dir,"pos_"+"%04d"%(perturb_num)+'.yaml')
+                    for traj in curr_arm:
+                        for row_idx, row in enumerate(curr_arm[traj]):
+                            for axis_idx, axis in enumerate(row['position']):
+                                curr_arm[traj][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
+                    
+                    self.trajectory_built['arm'] = curr_arm
+                    out_file =   os.path.join(self.filepath_out_dir,"pos_"+"%04d"%(perturb_num)+'.yaml')
+                    self.save_traj(out_file)
+                    perturb_num+=1
 
-                self.save_traj(out_file)
+                self.build_moves(base_config)
 
-                perturb_num+=1
+
+            else:
+
+                for entry, release_entry in zip(self.perturbations, self.release_perturbations):
+                    
+                    # Update with current perturbation
+                    curr_config = copy.deepcopy(base_config)
+
+                    if shift_initial_pose:
+                        if isinstance(curr_config['arm']['initial_pose'], list):
+                            for row_idx, row in enumerate(curr_config['arm']['initial_pose']):
+                                for axis_idx, axis in enumerate(row['position']):
+                                    curr_config['arm']['initial_pose'][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
+
+                        else:
+                            for idx, axis in enumerate(curr_config['arm']['initial_pose']['position']):
+                                curr_config['arm']['initial_pose']['position'][idx] = axis + entry[idx]
+
+
+
+                    if isinstance(curr_config['arm']['grasp_pose'], list):
+                        for row_idx, row in enumerate(curr_config['arm']['grasp_pose']):
+                            for axis_idx, axis in enumerate(row['position']):
+                                curr_config['arm']['grasp_pose'][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
+
+                    else:
+                        for idx, axis in enumerate(curr_config['arm']['grasp_pose']['position']):
+                            curr_config['arm']['grasp_pose']['position'][idx] = axis + entry[idx]
+
+
+                    if shift_release_pose:
+                        if isinstance(curr_config['arm']['release_pose'], list):
+                            for row_idx, row in enumerate(curr_config['arm']['release_pose']):
+                                for axis_idx, axis in enumerate(row['position']):
+                                    curr_config['arm']['release_pose'][row_idx]['position'][axis_idx] = axis + entry[axis_idx]
+                        else:
+                            for idx, axis in enumerate(curr_config['arm']['release_pose']['position']):
+                                curr_config['arm']['release_pose']['position'][idx] = axis + release_entry[idx]
+
+                    self.build_moves(curr_config)
+                    self.build_sequence()
+                    self.validate_arm_moves()
+
+                    out_file =   os.path.join(self.filepath_out_dir,"pos_"+"%04d"%(perturb_num)+'.yaml')
+
+                    self.save_traj(out_file)
+
+                    perturb_num+=1
 
         else:
             self.build_moves(base_config)
             self.build_sequence()
+            self.validate_arm_moves()
             out_file =   os.path.join(self.filepath_out_dir,"pos_"+"%04d"%(0)+'.yaml')
             self.save_traj(out_file)
 
@@ -291,7 +352,7 @@ class pickPlaceBuild:
         
         ops.append({'arm': 'move', 'hand': False, 'servo': False})
 
-        if self.config['arm']['pickup']['type'] == 'to_pose':
+        if self.config['arm'].get('pickup',{}).get('type',None) == 'to_pose':
             ops.append({'arm': 'manip_before', 'hand': False, 'servo': False})
 
         hand_manip = self.config['hand'].get('manip_sequence', None)
@@ -308,7 +369,7 @@ class pickPlaceBuild:
             ops.append({'arm': 'manip', 'hand': False, 'servo': False})
             ops.append({'arm': 'manip_seq_after', 'hand': False, 'servo': False})
         
-        if self.config['arm']['pickup']['type'] == 'to_pose':
+        if self.config['arm'].get('pickup',{}).get('type',None) == 'to_pose':
             ops.append({'arm': 'manip_after', 'hand': False, 'servo': False})
 
         release_when = self.config['hand'].get('release_start','after')
@@ -690,131 +751,134 @@ class pickPlaceBuild:
 
         arm_moves = {}
 
-        # Build the grasp move.
-        # If the object is a list, then use all the entries
-        if isinstance(config['arm']['grasp_pose'], list):
-            arm_moves['pre'] = [copy.deepcopy(config['arm']['initial_pose']),
-                                copy.deepcopy(config['arm']['grasp_pose'][0])   ]
+        if config['arm'].get('grasp_pose', ) is not None:
+            # Build the grasp move.
+            # If the object is a list, then use all the entries
+            if isinstance(config['arm']['grasp_pose'], list):
+                arm_moves['pre'] = [copy.deepcopy(config['arm']['initial_pose']),
+                                    copy.deepcopy(config['arm']['grasp_pose'][0])   ]
 
-            grasp_end_pose = copy.deepcopy(config['arm']['grasp_pose'][-1])
+                grasp_end_pose = copy.deepcopy(config['arm']['grasp_pose'][-1])
 
-            arm_moves['grasp_move'] = []
-            for row in config['arm']['grasp_pose']:
-                arm_moves['grasp_move'].append(copy.deepcopy(row))
+                arm_moves['grasp_move'] = []
+                for row in config['arm']['grasp_pose']:
+                    arm_moves['grasp_move'].append(copy.deepcopy(row))
 
-        else:
-            arm_moves['pre'] = [copy.deepcopy(config['arm']['initial_pose']),
-                                copy.deepcopy(config['arm']['grasp_pose'])   ]
+            else:
+                arm_moves['pre'] = [copy.deepcopy(config['arm']['initial_pose']),
+                                    copy.deepcopy(config['arm']['grasp_pose'])   ]
 
-            arm_moves['grasp_move'] = [copy.deepcopy(config['arm']['grasp_pose']),
-                                       copy.deepcopy(config['arm']['grasp_pose']) ]
+                arm_moves['grasp_move'] = [copy.deepcopy(config['arm']['grasp_pose']),
+                                        copy.deepcopy(config['arm']['grasp_pose']) ]
 
-            grasp_end_pose = copy.deepcopy(config['arm']['grasp_pose'])
+                grasp_end_pose = copy.deepcopy(config['arm']['grasp_pose'])
 
 
-        # Build the pickup/release move
-        if isinstance(config['arm']['release_pose'], list):
-            arm_moves['release_move'] = []
-            for row in config['arm']['release_pose']:
-                arm_moves['release_move'].append(copy.deepcopy(row))
-            
-            release_start = copy.deepcopy(config['arm']['release_pose'][0])
-            release_end = copy.deepcopy(config['arm']['release_pose'][-1])
-        else:
-            arm_moves['release_move'] = [copy.deepcopy(config['arm']['release_pose']),
-                                       copy.deepcopy(config['arm']['release_pose']) ]
-            
-            release_start = copy.deepcopy(config['arm']['release_pose'])
-            release_end = copy.deepcopy(config['arm']['release_pose'])
 
+
+        if config['arm'].get('release_pose', None) is not None:
+            # Build the pickup/release move
+            if isinstance(config['arm']['release_pose'], list):
+                arm_moves['release_move'] = []
+                for row in config['arm']['release_pose']:
+                    arm_moves['release_move'].append(copy.deepcopy(row))
+                
+                release_start = copy.deepcopy(config['arm']['release_pose'][0])
+                release_end = copy.deepcopy(config['arm']['release_pose'][-1])
+            else:
+                arm_moves['release_move'] = [copy.deepcopy(config['arm']['release_pose']),
+                                        copy.deepcopy(config['arm']['release_pose']) ]
+                
+                release_start = copy.deepcopy(config['arm']['release_pose'])
+                release_end = copy.deepcopy(config['arm']['release_pose'])
 
 
         pickup = config['arm'].get('pickup', None)
+        if pickup is not None:
+            # Package args if they are defined inline (for backward compatibillity)
+            if pickup.get('args', None) is None:
+                pickup['args']={}
+                for key in pickup:
+                    if key=='type':
+                        continue
+                    else:
+                        pickup['args'][key] = copy.deepcopy(pickup[key])
+                        #del pickup[key]
 
-        # Package args if they are defined inline (for backward compatibillity)
-        if pickup.get('args', None) is None:
-            pickup['args']={}
-            for key in pickup:
-                if key=='type':
-                    continue
-                else:
-                    pickup['args'][key] = copy.deepcopy(pickup[key])
-                    #del pickup[key]
+            # Check if the pickup is reasonable
+            if not self.validate_pickup(pickup):
+                return
+            
+            # Generate a "square" pickup sequence
+            if pickup['type'] == 'square':
+                above_grasp = copy.deepcopy(grasp_end_pose)
+                above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
 
-        # Check if the pickup is reasonable
-        if not self.validate_pickup(pickup):
-            return
-        
-        # Generate a "square" pickup sequence
-        if pickup['type'] == 'square':
-            above_grasp = copy.deepcopy(grasp_end_pose)
-            above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
+                above_release = copy.deepcopy(release_start)
+                above_release['position'][2] = above_release['position'][2] + pickup['args']['height']
 
-            above_release = copy.deepcopy(release_start)
-            above_release['position'][2] = above_release['position'][2] + pickup['args']['height']
+                arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
+                                    above_grasp,
+                                    above_release,
+                                    release_start]
 
-            arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
-                                above_grasp,
-                                above_release,
-                                release_start]
+            # Generate a "triangle" pickup sequence
+            elif pickup['type'] == 'triangle':
+                above_grasp = copy.deepcopy(grasp_end_pose)
+                above_release = copy.deepcopy(release_start)
+                for axis_idx, item in enumerate(above_grasp['position']):
+                    above_grasp['position'][axis_idx] = ((1-pickup['args']['percent'])*above_grasp['position'][axis_idx] + (pickup['args']['percent'])*above_release['position'][axis_idx])
 
-        # Generate a "triangle" pickup sequence
-        elif pickup['type'] == 'triangle':
-            above_grasp = copy.deepcopy(grasp_end_pose)
-            above_release = copy.deepcopy(release_start)
-            for axis_idx, item in enumerate(above_grasp['position']):
-                above_grasp['position'][axis_idx] = ((1-pickup['args']['percent'])*above_grasp['position'][axis_idx] + (pickup['args']['percent'])*above_release['position'][axis_idx])
+                above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
 
-            above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
+                arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
+                                    above_grasp,
+                                    release_start ]
 
-            arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
-                                above_grasp,
-                                release_start ]
+            # Generate a "to-pose" sequence
+            elif pickup['type'] == 'to_pose':
+                poses = pickup.get('args', None)
 
-        # Generate a "to-pose" sequence
-        elif pickup['type'] == 'to_pose':
-            poses = pickup.get('args', None)
+                if isinstance(poses, dict):
+                    pose_to_use_before = poses['before']
+                    pose_to_use_after =  poses['after']
+                elif pose is not None:
+                    pose_to_use_before = poses
+                    pose_to_use_after =  poses
 
-            if isinstance(poses, dict):
-                pose_to_use_before = poses['before']
-                pose_to_use_after =  poses['after']
-            elif pose is not None:
-                pose_to_use_before = poses
-                pose_to_use_after =  poses
+                # Get the manip pose and turn it into a list if needed
+                print(pose_to_use_before)
+                print(pose_to_use_after)
+                manip_pose_before = config['arm'][pose_to_use_before]
+                manip_pose_after = config['arm'][pose_to_use_after]
+                if not isinstance(manip_pose_before, list):
+                    manip_pose_before = [manip_pose_before]
+                if not isinstance(manip_pose_after, list):
+                    manip_pose_after = [manip_pose_after]
 
-            # Get the manip pose and turn it into a list if needed
-            print(pose_to_use_before)
-            print(pose_to_use_after)
-            manip_pose_before = config['arm'][pose_to_use_before]
-            manip_pose_after = config['arm'][pose_to_use_after]
-            if not isinstance(manip_pose_before, list):
-                manip_pose_before = [manip_pose_before]
-            if not isinstance(manip_pose_after, list):
-                manip_pose_after = [manip_pose_after]
+                arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
+                                    copy.deepcopy(grasp_end_pose) ]
 
-            arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
-                                 copy.deepcopy(grasp_end_pose) ]
-
-            arm_moves['manip_before'] = [copy.deepcopy(grasp_end_pose)]
-            arm_moves['manip_before'].extend(copy.deepcopy(manip_pose_before))
-            arm_moves['manip_after'] =  copy.deepcopy([manip_pose_before[-1]])
-            arm_moves['manip_after'].extend(copy.deepcopy(manip_pose_after))
-            arm_moves['manip_after'].append(copy.deepcopy(release_start))
+                arm_moves['manip_before'] = [copy.deepcopy(grasp_end_pose)]
+                arm_moves['manip_before'].extend(copy.deepcopy(manip_pose_before))
+                arm_moves['manip_after'] =  copy.deepcopy([manip_pose_before[-1]])
+                arm_moves['manip_after'].extend(copy.deepcopy(manip_pose_after))
+                arm_moves['manip_after'].append(copy.deepcopy(release_start))
 
 
-        else:
-            print('Pickup type not implemented yet: Doing square instead')
+            else:
+                print('Pickup type not implemented yet: Doing square instead')
 
-            above_grasp = copy.deepcopy(grasp_end_pose)
-            above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
+                above_grasp = copy.deepcopy(grasp_end_pose)
+                above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
 
-            above_release = copy.deepcopy(release_start)
-            above_release['position'][2] = above_release['position'][2] + pickup['args']['height']
+                above_release = copy.deepcopy(release_start)
+                above_release['position'][2] = above_release['position'][2] + pickup['args']['height']
 
-            arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
-                                above_grasp,
-                                above_release,
-                                release_start ]
+                arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
+                                    above_grasp,
+                                    above_release,
+                                    release_start ]
    
         # Build the manipulation sequence
         arm_manip_sequence = config['arm'].get('manip_sequence', None)
@@ -871,9 +935,10 @@ class pickPlaceBuild:
                     
 
 
-        # Build the post-release move.
-        arm_moves['post'] = [release_end,
-                            copy.deepcopy(config['arm']['final_pose'])   ]
+        if config['arm'].get('final_pose', None) is not None:
+            # Build the post-release move.
+            arm_moves['post'] = [release_end,
+                                copy.deepcopy(config['arm']['final_pose'])   ]
 
 
         if self.reset_object:

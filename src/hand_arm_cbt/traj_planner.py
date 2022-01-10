@@ -71,6 +71,7 @@ class TrajPlanner:
 
             self.sequence = self.traj_config['sequence']
             self.setup = self.sequence['setup']
+            self.operations = self.sequence['operations']
             self.arm_segs = self.traj_config['arm']
             self.settings = self.traj_config.get('settings',{})
             f.close()
@@ -99,6 +100,7 @@ class TrajPlanner:
 
                 self.sequence = self.traj_config['sequence']
                 self.setup = self.sequence['setup']
+                self.operations = self.sequence['operations']
                 self.arm_segs = self.traj_config['arm']
                 self.settings = self.traj_config.get('settings',{})
                 f.close()
@@ -109,10 +111,27 @@ class TrajPlanner:
             self.save_plan(os.path.join(self.filepath,config_file))
 
 
+    def sort_segments(self, segs, operations):
+        sorted_segs = []
+        for op in operations:
+            arm_op = op.get('arm')
+            if isinstance(arm_op, str) and not(arm_op in sorted_segs):
+                sorted_segs.append(arm_op)
+        
+        return sorted_segs
+
+
     def plan_segments(self):
         # build the trajectories
         self.planned_segments = {}
-        for segment_name in self.arm_segs:
+
+        # Put the segments in order
+        self.arm_segs_sorted = self.sort_segments(self.arm_segs, self.operations)
+
+        for segment_name in self.arm_segs_sorted:
+            if segment_name not in self.arm_segs.keys():
+                print("Segment '%s' not defined...skipping this"%(segment_name))
+                continue
             print(segment_name)
             if self.arm_sender is None:
                 self.planned_segments[segment_name] = self.arm_segs[segment_name]
