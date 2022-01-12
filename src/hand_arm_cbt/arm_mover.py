@@ -181,10 +181,10 @@ class trajSender:
 
 
     def display_trajectory(self, plan):
-        print(plan)
+        #print(plan)
         traj = plan.trajectory
         joints = traj.joint_names 
-        print(traj)
+        #print(traj)
 
         init_joints = JointState()
         init_joints.name = joints

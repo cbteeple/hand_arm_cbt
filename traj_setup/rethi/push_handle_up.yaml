@@ -48,7 +48,7 @@ arm:
   manip_sequence:
     type: 'trajectory'
     args:
-      trajectory: 'tasks/flip_handle.yaml'
+      trajectory: 'tasks/push_handle_up.yaml' #'tasks/flip_handle.yaml'
       sequence:   'sequence'
       moves:   'arm'
 
@@ -72,10 +72,10 @@ arm:
 hand:
   type: 'robotiq_2F'  # defailt: 'pressure_controlled', others: robotiq_2F, robotiq_3F,
 
-  initial_pos:  {pos: 0.085, speed: 0.1, force: 0}  #[psi]
-  idle_pos:     {pos: 0.085, speed: 0.1, force: 0}  #[psi]
-  grasp_pos:    {pos: 0.000, speed: 0.1, force: 0}  #[psi]
-  half_grasp:   {pos: 0.075, speed: 0.1, force: 0}  #[psi]
+  initial_pos:  {pos: 0.085, speed: 0.1, force: 100}  #[psi]
+  idle_pos:     {pos: 0.085, speed: 0.1, force: 100}  #[psi]
+  grasp_pos:    {pos: 0.000, speed: 0.1, force: 100}  #[psi]
+  half_grasp:   {pos: 0.075, speed: 0.1, force: 100}  #[psi]
 
   grasp_sequence:
     type: 'trajectory'

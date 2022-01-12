@@ -48,7 +48,7 @@ arm:
   manip_sequence:
     type: 'trajectory'
     args:
-      trajectory: 'tasks/flip_handle.yaml'
+      trajectory: 'tasks/use_handle.yaml' #'tasks/flip_handle.yaml'
       sequence:   'sequence'
       moves:   'arm'
 

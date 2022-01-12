@@ -392,7 +392,10 @@ class TrajRunner:
         if self.use_servo:
             self.servo_sender.go_to_start(self.operation_sequence[0]['servo'], reset_time, blocking=False)
         if self.use_arm:
-            self.arm_sender.go_to_start(self.operation_sequence[0]['arm'], reset_time, blocking=False)
+            if not self.fake:
+                self.arm_sender.go_to_start(self.operation_sequence[0]['arm'], reset_time, blocking=False)
+            else:
+                self.arm_sender.display_trajectory(self.operation_sequence[0]['arm'])
 
         # Wait for the traj to finish
         if self.use_hand:
