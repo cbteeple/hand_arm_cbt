@@ -1,0 +1,104 @@
+settings:
+  boomerang: true
+  reset_object: false
+  type: grid # options: single, grid
+  use_arm: True
+  use_hand: True
+
+  # Ignore arm settings. They are unused.
+arm:
+  orientation_type: 'degrees' # options: 'quaterions', 'radians, 'degrees'
+
+  #initial_pose:
+  #  position: [-0.253140424, 0.25, 0.44383439050000006]
+  #  orientation: [0,80,0]
+
+  #grasp_pose:
+  #  - position: [-0.253140424, 0.25, 0.44383439050000006]
+  #    orientation: [0,90,0]
+
+  #manip_pose_before:
+  #  - position: [0.55, 0.30, 0.25]
+  #    orientation: [0,90,0]
+  #  - position: [0.3, 0.40, 0.25]
+  #    orientation: [0, 90,0]
+
+
+  #manip_pose_after:
+  #  - position: [0.3, 0.40, 0.25]
+  #    orientation: [0, 90,0]
+  #  - position: [0.55, 0.30, 0.25]
+  #    orientation: [0,90,0]
+
+
+  #release_pose:
+  #  position: [0.04407003500000002, 0.25, 0.28320261]
+  #  orientation: [0,90,0]
+
+  #final_pose:
+  #  position: [0.04407003500000002, 0.25, 0.28320261]
+  #  orientation: [0,90,0]
+
+
+  #pickup:
+  #  type: square # square, triangle, to_pose
+  #  args:
+  #    height: 0
+
+  manip_sequence:
+    type: 'trajectory'
+    args:
+      trajectory: 'tasks/initial_insert/2deg_alt_390.0_90.0_0.0.yaml' #'tasks/flip_handle.yaml'
+      sequence:   'sequence'
+      moves:   'arm'
+
+  grid:
+    # Number of points on each side [number] in (x, y, z) order
+    num_pts: [1,1,1]  #to make cm-spaced grid points add one (for example, 0.20/0.01 = 20 segments, with 21 points total)
+
+    # Dimension of each grid side [meters] in (x, y, z) order
+    dims: [0,0,0]
+    release_dims: [0,0,0]
+
+    # Basis shifting (maybe you don't want the ref frame to be the robot's home frame)
+    # Use quaternions?
+    basis: []
+
+    #affects_release_pose: True
+    shift_entire_trajectory: True
+
+
+
+hand:
+  type: 'robotiq_2F'  # defailt: 'pressure_controlled', others: robotiq_2F, robotiq_3F,
+
+  initial_pos:  {pos: 0.085, speed: 0.1, force: 100}  #[psi]
+  idle_pos:     {pos: 0.085, speed: 0.1, force: 100}  #[psi]
+  grasp_pos:    {pos: 0.000, speed: 0.1, force: 100}  #[psi]
+  half_grasp:   {pos: 0.075, speed: 0.1, force: 100}  #[psi]
+
+  grasp_sequence:
+    type: 'trajectory'
+    sequence:
+      - time: 0.0
+        pos: half_grasp
+      - time: 1.0
+        pos: grasp_pos
+
+
+  #manip_sequence:
+
+  #manip_repeat: 3.0
+
+  # Decide when to start the grasp compared to when the arm moves.
+  grasp_start: "after" #options: "after", "during"
+
+  wait_before_grasp: 0.0    #[sec]
+  grasp_time: 0.2    #[sec]
+  wait_after_grasp: 0.0    #[sec]
+
+  
+  release_start: "after" #options: "after", "during"
+  wait_before_release: 0.0
+  release_time: 1.0  #[sec]
+  wait_after_release: 0.5    #[s

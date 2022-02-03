@@ -1,0 +1,42 @@
+arm:
+  traj_group_00:
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.22944469599999998, 0.39, 0.31840594]
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.32999998599999997, 0.39, 0.25391964]
+  traj_group_01:
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.32999998599999997, 0.39, 0.25391964]
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.32999998599999997, 0.39, 0.16235411000000005]
+  traj_group_02:
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.329999986, 0.39, 0.16235411000000005]
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.30649821600000005, 0.39, 0.27566295]
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.30649821600000005, 0.39, 0.27566295]
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.306993406, 0.39, 0.394280759]
+  - orientation: [0.0, 95.70747332020619, 0.0]
+    position: [0.306993406, 0.39, 0.394280759]
+  - orientation: [0.0, 95.70747332020619, 0.0]
+    position: [0.5598877660000001, 0.39, 0.36900523100000004]
+  traj_group_03:
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.5598877660000001, 0.39, 0.36900523100000004]
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.5600000260000001, 0.39, 0.419326704]
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.5600000260000001, 0.39, 0.419326704]
+  - orientation: [0.0, 90.0, 0.0]
+    position: [0.28443688600000006, 0.39, 0.419326704]
+sequence:
+- {arm: false, hand: false, servo: false}
+- {arm: traj_group_00, hand: false, servo: false}
+- {arm: false, hand: release, servo: false}
+- {arm: traj_group_01, hand: false, servo: false}
+- {arm: false, hand: grasp, servo: false}
+- {arm: traj_group_02, hand: false, servo: false}
+- {arm: false, hand: release, servo: false}
+- {arm: traj_group_03, hand: false, servo: false}
