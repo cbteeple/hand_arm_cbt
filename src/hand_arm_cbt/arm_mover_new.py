@@ -15,11 +15,11 @@
 # limitations under the License.
 
 import time
-import roslib; roslib.load_manifest('ur_driver')
 import rospy
 import actionlib
 from simple_ur_move.cartesian_trajectory_handler import CartesianTrajectoryHandler
 from simple_ur_move.joint_trajectory_handler import JointTrajectoryHandler
+from moveit_msgs.msg import DisplayTrajectory
 import rospkg
 from math import pi
 import yaml
@@ -33,7 +33,7 @@ JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
 
 
-filepath_default = os.path.join('..','trajectories')
+filepath_default = os.path.join(rospkg.RosPack().get_path('hand_arm'),'trajectories')
 filepath_config = os.path.join(rospkg.RosPack().get_path('hand_arm'), 'config')
 
 
@@ -46,18 +46,18 @@ class trajSender:
             
         # Load up the trajectory handler
         if traj_type == 'cartesian':
-            self.traj_handler = CartesianTrajectoryHandler(name="", controller="", debug=self.debug
+            self.traj_handler = CartesianTrajectoryHandler(name="", controller="pose_based_cartesian_controller", debug=self.debug)
             self.traj_handler.load_config('arm_cartesian_config.yaml', filepath_config)
             self.traj_handler.set_initialize_time(self.reset_time)
         
         else:
-            self.traj_handler = JointTrajectoryHandler(name="", controller="", debug=self.debug
+            self.traj_handler = JointTrajectoryHandler(name="", controller="scaled_pos_joint_traj_controller", debug=self.debug)
             self.traj_handler.load_config('arm_joint_config.yaml', filepath_config)
             self.get_joint_names(JOINT_NAMES)
         
 
         self.traj_handler.set_initialize_time(self.reset_time)
-        self.traj_handler.speed_factor(speed_factor)
+        self.traj_handler.set_speed_factor(speed_factor)
 
         self.traj_client = self.traj_handler.trajectory_client
 
@@ -82,17 +82,18 @@ class trajSender:
     def build_traj(self, arm_trajIn = None):
 
         if isinstance(arm_trajIn, list):
-            if "positions" in arm_trajIn[0].keys()
-                traj= arm_trajIn
-            else:
-                traj= []
-                time_offset = arm_trajIn[0]['time']
+            if isinstance(arm_trajIn[0], dict):
+                if "joints_pos" in arm_trajIn[0].keys():
+                    traj= []
+                    time_offset = arm_trajIn[0]['time']
 
-                for point in arm_trajIn:
-                    curr_pt = {'positions': point['joints_pos'],
-                            'velocities': point['joints_vel'],
-                            'time': point['time']-time_offset}
-                    traj.append(curr_pt)
+                    for point in arm_trajIn:
+                        curr_pt = {'positions': point['joints_pos'],
+                                'velocities': point['joints_vel'],
+                                'time': point['time']-time_offset}
+                        traj.append(curr_pt)
+                else:
+                    traj= arm_trajIn
         else:
             traj= arm_trajIn.trajectory
 
@@ -102,9 +103,9 @@ class trajSender:
 
 
     def go_to_start(self, goal, reset_time, blocking=True):
-
         self.traj_handler.set_initialize_time(reset_time)
         self.traj_handler.go_to_point(goal.trajectory.points[0])
+        
 
 
     def safe_stop(self):
@@ -137,10 +138,38 @@ class trajSender:
         rospy.sleep(3)
 
 
+    def fix_points(self, points):
+        new_points=[]
+        last_time = -1000
+        for pt in points:
+            if pt.time_from_start.to_sec() ==last_time:
+                new_points.pop(-1)
+                new_points.append(pt)
+            else:
+                new_points.append(pt)
+            last_time = pt.time_from_start.to_sec()
+        return new_points
 
 
     def execute_traj(self, goal, blocking=True):
         try:
+            print("")
+            print("START: ",len(goal.trajectory.points))
+
+            if goal.trajectory.points[0].time_from_start.to_sec() ==0:
+                self.go_to_start(goal, 0.01)
+                goal.trajectory.points.pop(0)
+            
+            goal.trajectory.points = self.fix_points(goal.trajectory.points)
+
+            times= []
+            for pt in goal.trajectory.points:
+                times.append(pt.time_from_start.to_sec())
+
+            print("")
+            print("EXECUTE: ",len(goal.trajectory.points))
+            print(times)
+
             self.traj_handler.run_trajectory(goal, blocking=False, perform_init=False)
 
             if blocking:
