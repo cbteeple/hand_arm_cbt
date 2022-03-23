@@ -1,0 +1,31 @@
+settings:
+  units: 
+    orientation: 'radians' # degrees, radians
+
+  joint_names: ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
+               'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
+
+  # Path tolerance (set to null for default)
+  path_tolerance: null
+    #position_error: [0.001, 0.001 ,0.001] #[x,y,z]
+    #orientation_error: [0.01, 0.01 ,0.01] #[x,y,z]
+    #twist_error:
+    #  linear:  [0.001, 0.001 ,0.001] #[x,y,z]
+    #  angular:  [0.01, 0.01 ,0.01] #[x,y,z]
+    #acceleration_error:
+    #  linear:  [0.001, 0.001 ,0.001] #[x,y,z]
+    #  angular:  [0.01, 0.01 ,0.01] #[x,y,z]
+
+  # Goal tolerance (set to null for default)
+  goal_tolerance: null
+    #position_error: [0.001, 0.001 ,0.001] #[x,y,z]
+    #orientation_error: [0.01, 0.01 ,0.01] #[x,y,z]
+    #twist_error:
+    #  linear:  [0.001, 0.001 ,0.001] #[x,y,z]
+    #  angular:  [0.01, 0.01 ,0.01] #[x,y,z]
+    #acceleration_error:
+    #  linear:  [0.001, 0.001 ,0.001] #[x,y,z]
+    #  angular:  [0.01, 0.01 ,0.01] #[x,y,z]
+
+  # Time tolerance (set to null for default)
+  goal_time_tolerance: null
