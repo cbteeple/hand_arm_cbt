@@ -15,12 +15,8 @@
 # limitations under the License.
 
 import time
-import roslib; roslib.load_manifest('ur_driver')
 import rospy
 import actionlib
-from control_msgs.msg import *
-from trajectory_msgs.msg import *
-from sensor_msgs.msg import JointState
 from pressure_controller_ros.msg import *
 from math import pi
 import yaml
@@ -30,14 +26,6 @@ import sys
 import errno
 import matplotlib.pyplot as plt
 from datetime import datetime
-
-from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
-from hand_arm_cbt.arm_mover import trajSender as ur_traj_sender
-from robotiq_trajectory_control.robotiq_2f_trajectory import trajSender as robotiq_traj_sender
-from dynamixel_gripper_control.dynamixel_trajectory import trajSender as dynamixel_traj_sender
-from hand_arm_cbt.arm_moveit import MoveItPythonInteface as ur_traj_sender_moveit
-import rosbag_recorder.srv as rbr
-import video_recorder.srv as vrec
 
 
 reset_time = 2.0
@@ -115,14 +103,26 @@ class TrajRunner:
 
         # Create the arm objects
         if self.use_arm:
-            if (setup['arm_traj_space']== 'joint') or (setup['arm_traj_space']== 'joint-planned'):
-                self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
+            if 'joint' in setup['arm_traj_space']:
+                if 'legacy' in setup['arm_traj_space']:
+                    import roslib; roslib.load_manifest('ur_driver')
+                    from hand_arm_cbt.arm_mover import trajSender as ur_traj_sender
+                    self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
+                else:
+                    from hand_arm_cbt.arm_mover_new import trajSender as ur_traj_sender_new
+                    self.arm_sender = ur_traj_sender_new(self.speed_factor, 'joint', self.DEBUG)
 
-            elif setup['arm_traj_space'] == 'cartesian':
-                self.arm_sender = ur_traj_sender_moveit(JOINT_NAMES)
+            elif 'cartesian' in setup['arm_traj_space']:
+                if 'direct' in setup['arm_traj_space']:
+                    from hand_arm_cbt.arm_mover_new import trajSender as ur_traj_sender_new
+                    self.arm_sender = ur_traj_sender_new(self.speed_factor, 'cartesian', self.DEBUG)
 
-                #configure the planners based on the config file
-                self.arm_sender.config_planner(os.path.join(filepath_config,'moveit_config.yaml'))
+                else:
+                    from hand_arm_cbt.arm_moveit import MoveItPythonInteface as ur_traj_sender_moveit
+                    self.arm_sender = ur_traj_sender_moveit(JOINT_NAMES)
+
+                    #configure the planners based on the config file
+                    self.arm_sender.config_planner(os.path.join(filepath_config,'moveit_config.yaml'))
             else:
                 if self.DEBUG:
                     print('Nonstandard arm trajectory space')
@@ -135,11 +135,13 @@ class TrajRunner:
         # Create the pneumatic hand object
         if self.use_hand:
             if setup['hand_traj_space'] == 'pressure':
+                from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
                 self.hand_sender = pneu_traj_sender(self.speed_factor)
                 self.hand_sender.DEBUG=self.DEBUG
             elif setup['hand_traj_space'] == 'robotiq':
                 if self.DEBUG:
                     print("getting robotiq hand traj server")
+                from robotiq_trajectory_control.robotiq_2f_trajectory import trajSender as robotiq_traj_sender
                 self.hand_sender = robotiq_traj_sender(self.speed_factor)
                 self.hand_sender.DEBUG=self.DEBUG
                 if self.DEBUG:
@@ -147,6 +149,7 @@ class TrajRunner:
             elif setup['hand_traj_space'] == 'dynamixel':
                 if self.DEBUG:
                     print("getting dynamixel hand traj server")
+                from dynamixel_gripper_control.dynamixel_trajectory import trajSender as dynamixel_traj_sender
                 self.hand_sender = dynamixel_traj_sender(self.speed_factor)
                 self.hand_sender.DEBUG=self.DEBUG
                 if self.DEBUG:
@@ -227,6 +230,8 @@ class TrajRunner:
         
 
     def start_saving(self):
+        import rosbag_recorder.srv as rbr
+        import video_recorder.srv as vrec
         rospy.wait_for_service('rosbag_recorder/record_topics')
 
         if self.use_camera:
@@ -260,10 +265,12 @@ class TrajRunner:
             
         except rospy.ServiceException, e:
             if self.DEBUG:
-                print "Service call failed: %s"%e
+                print ("Service call failed: %s"%(e))
 
 
     def stop_saving(self):
+        import rosbag_recorder.srv as rbr
+        import video_recorder.srv as vrec
         try:
             service = rospy.ServiceProxy('rosbag_recorder/stop_recording', rbr.StopRecording)
             response = service(self.out_filename)
@@ -276,7 +283,7 @@ class TrajRunner:
             return response.success
         except rospy.ServiceException, e:
             if self.DEBUG:
-                print "Service call failed: %s"%e
+                print ("Service call failed: %s"%(e))
 
 
 

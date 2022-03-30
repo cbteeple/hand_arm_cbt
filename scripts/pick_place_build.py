@@ -65,9 +65,10 @@ class pickPlaceBuild:
 
         self.traj_patterned = []
 
-        self.max_p = self.config['hand'].get("max_pressure", np.inf)
-        self.min_p  = self.config['hand'].get("min_pressure", -np.inf)
-        self.hand_type=self.config['hand'].get('type','pressure_controlled')
+        self.max_p = self.config.get('hand',{}).get("max_pressure", np.inf)
+        self.min_p  = self.config.get('hand',{}).get("min_pressure", -np.inf)
+        self.hand_type=self.config.get('hand',{}).get('type','pressure_controlled')
+        self.arm_type=self.config.get('arm',{}).get('type','cartesian-direct')
 
         skill_context = rospy.get_param('/config_node/profile_name',[])
         self.skill_builder = SkillBuilder(context=skill_context,skill_package='hand_arm', skill_folder='hand_skills')
@@ -312,7 +313,11 @@ class pickPlaceBuild:
         sequence = {}
 
         sequence['setup'] = {}
-        sequence['setup']['arm_traj_space']  = 'cartesian'
+        if 'direct' in self.arm_type:
+            sequence['setup']['arm_traj_space']  = 'cartesian-direct'
+        else:
+            sequence['setup']['arm_traj_space']  = 'cartesian'
+
         if 'robotiq' in self.hand_type:
             sequence['setup']['hand_traj_space'] = 'robotiq'
         elif 'dynamixel' in self.hand_type:
@@ -772,6 +777,12 @@ class pickPlaceBuild:
                                         copy.deepcopy(config['arm']['grasp_pose']) ]
 
                 grasp_end_pose = copy.deepcopy(config['arm']['grasp_pose'])
+                arm_moves['grasp_move'][0]['time']=0.0
+            
+            if config['arm']['initial_pose'].get('time'):
+                arm_moves['pre'][1]['time']=config['arm']['initial_pose'].get('time')
+
+            arm_moves['pre'][0]['time']=0.0
 
 
 
@@ -792,6 +803,10 @@ class pickPlaceBuild:
                 release_start = copy.deepcopy(config['arm']['release_pose'])
                 release_end = copy.deepcopy(config['arm']['release_pose'])
 
+                arm_moves['release_move'][0]['time']=0.0
+
+                release_start['time']=0.0
+
 
         pickup = config['arm'].get('pickup', None)
         if pickup is not None:
@@ -811,29 +826,46 @@ class pickPlaceBuild:
             
             # Generate a "square" pickup sequence
             if pickup['type'] == 'square':
+                move_time = float(pickup['args'].get('time', 5.0))
+                grasp_end_pose_cp = copy.deepcopy(grasp_end_pose)
+                grasp_end_pose_cp['time']=0.0
+
                 above_grasp = copy.deepcopy(grasp_end_pose)
                 above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
+                above_grasp['time']=1.0*move_time/3.0
 
                 above_release = copy.deepcopy(release_start)
                 above_release['position'][2] = above_release['position'][2] + pickup['args']['height']
+                above_release['time']=2.0*move_time/3.0
 
-                arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
-                                    above_grasp,
-                                    above_release,
-                                    release_start]
+                release_start_cp = copy.deepcopy(release_start)
+                release_start_cp['time']=move_time
+
+                arm_moves['move'] = [grasp_end_pose_cp,
+                                     above_grasp,
+                                     above_release,
+                                     release_start_cp]
 
             # Generate a "triangle" pickup sequence
             elif pickup['type'] == 'triangle':
+                move_time = float(pickup['args'].get('time', 5.0))
+                grasp_end_pose_cp = copy.deepcopy(grasp_end_pose)
+                grasp_end_pose_cp['time']=0.0
+
                 above_grasp = copy.deepcopy(grasp_end_pose)
                 above_release = copy.deepcopy(release_start)
                 for axis_idx, item in enumerate(above_grasp['position']):
                     above_grasp['position'][axis_idx] = ((1-pickup['args']['percent'])*above_grasp['position'][axis_idx] + (pickup['args']['percent'])*above_release['position'][axis_idx])
 
                 above_grasp['position'][2] = above_grasp['position'][2] + pickup['args']['height']
+                above_grasp['time']=move_time/2.0
 
-                arm_moves['move'] = [copy.deepcopy(grasp_end_pose),
+                release_start_cp = copy.deepcopy(release_start)
+                release_start_cp['time']=move_time
+
+                arm_moves['move'] = [grasp_end_pose_cp,
                                     above_grasp,
-                                    release_start ]
+                                    release_start_cp ]
 
             # Generate a "to-pose" sequence
             elif pickup['type'] == 'to_pose':
@@ -937,22 +969,24 @@ class pickPlaceBuild:
 
         if config['arm'].get('final_pose', None) is not None:
             # Build the post-release move.
-            arm_moves['post'] = [release_end,
+            release_end_cp = copy.deepcopy(release_end)
+            release_end_cp['time'] = 0.0
+            arm_moves['post'] = [release_end_cp,
                                 copy.deepcopy(config['arm']['final_pose'])   ]
 
 
         if self.reset_object:
-            arm_moves['release_move_inv'] = copy.deepcopy(list(reversed(arm_moves['release_move'])))
-            arm_moves['move_inv'] = copy.deepcopy(list(reversed(arm_moves['move'])))
+            arm_moves['release_move_inv'] = self.reverse_traj(arm_moves['release_move'])
+            arm_moves['move_inv'] = self.reverse_traj(arm_moves['move'])
 
             if arm_moves.get('manip_before'):
-                arm_moves['manip_before_inv'] = copy.deepcopy(list(reversed(arm_moves['manip_before'])))
-                arm_moves['manip_after_inv'] = copy.deepcopy(list(reversed(arm_moves['manip_after'])))
+                arm_moves['manip_before_inv'] = self.reverse_traj(arm_moves['manip_before'])
+                arm_moves['manip_after_inv'] = self.reverse_traj(arm_moves['manip_after'])
 
 
-            arm_moves['grasp_move_inv'] = copy.deepcopy(list(reversed(arm_moves['grasp_move'])))
-            arm_moves['pre_inv'] = copy.deepcopy(list(reversed(arm_moves['pre'])))
-            arm_moves['post_inv'] = copy.deepcopy(list(reversed(arm_moves['post'])))
+            arm_moves['grasp_move_inv'] = self.reverse_traj(arm_moves['grasp_move'])
+            arm_moves['pre_inv'] = self.reverse_traj(arm_moves['pre'])
+            arm_moves['post_inv'] = self.reverse_traj(arm_moves['post'])
 
         # Convert euler angles to quaterions if needed
         orientation_type = config['arm'].get('orientation_type')
@@ -966,11 +1000,25 @@ class pickPlaceBuild:
                             entry_to_use = np.deg2rad(entry['orientation']).tolist()
                         else:
                             entry_to_use = copy.deepcopy(entry['orientation'])
+                        
                         ori_quat = quaternion_from_euler(entry_to_use[0],entry_to_use[1],entry_to_use[2])
                         entry['orientation'] = ori_quat.tolist()          
 
 
         self.trajectory_built['arm'] = arm_moves
+
+
+    def reverse_traj(self, traj):
+        traj_rev = copy.deepcopy(list(reversed(traj)))
+
+        try:
+            endtime=traj[-1]['time']
+            for point in traj_rev:
+                point['time'] = endtime-point['time']
+        except:
+            pass
+
+        return traj_rev
 
 
     # Validate a pickup definition

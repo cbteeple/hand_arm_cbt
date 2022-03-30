@@ -46,7 +46,7 @@ class trajSender:
             
         # Load up the trajectory handler
         if traj_type == 'cartesian':
-            self.traj_handler = CartesianTrajectoryHandler(name="", controller="pose_based_cartesian_controller", debug=self.debug)
+            self.traj_handler = CartesianTrajectoryHandler(name="", controller="pose_based_cartesian_traj_controller", debug=self.debug)
             self.traj_handler.load_config('arm_cartesian_config.yaml', filepath_config)
             self.traj_handler.set_initialize_time(self.reset_time)
         
@@ -79,6 +79,11 @@ class trajSender:
         self.traj_handler.joint_names = joint_names
 
 
+    def convert_traj(self, plan):
+        goal = copy.deepcopy(plan)
+        return goal
+
+
     def build_traj(self, arm_trajIn = None):
 
         if isinstance(arm_trajIn, list):
@@ -103,6 +108,7 @@ class trajSender:
 
 
     def go_to_start(self, goal, reset_time, blocking=True):
+        goal = self.traj_handler.build_goal(goal)
         self.traj_handler.set_initialize_time(reset_time)
         self.traj_handler.go_to_point(goal.trajectory.points[0])
         
@@ -153,8 +159,9 @@ class trajSender:
 
     def execute_traj(self, goal, blocking=True):
         try:
-            print("")
-            print("START: ",len(goal.trajectory.points))
+            if self.debug:
+                print("")
+                print("START: ",len(goal.trajectory.points))
 
             if goal.trajectory.points[0].time_from_start.to_sec() ==0:
                 self.go_to_start(goal, 0.01)
@@ -166,9 +173,10 @@ class trajSender:
             for pt in goal.trajectory.points:
                 times.append(pt.time_from_start.to_sec())
 
-            print("")
-            print("EXECUTE: ",len(goal.trajectory.points))
-            print(times)
+            if self.debug:
+                print("")
+                print("EXECUTE: ",len(goal.trajectory.points))
+                print(times)
 
             self.traj_handler.run_trajectory(goal, blocking=False, perform_init=False)
 

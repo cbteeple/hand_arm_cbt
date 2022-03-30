@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import time
-import roslib; roslib.load_manifest('ur_driver')
+#import roslib; roslib.load_manifest('ur_driver')
 import rospy
 import actionlib
 from control_msgs.msg import *
@@ -29,7 +29,6 @@ import os
 import sys
 import matplotlib.pyplot as plt
 
-from hand_arm_cbt.arm_mover import trajSender as ur_traj_sender
 from hand_arm_cbt.arm_moveit import MoveItPythonInteface as ur_traj_sender_moveit
 
 
@@ -144,7 +143,12 @@ class TrajPlanner:
     def save_plan(self, in_file_name):
         if self.settings.get('use_arm',True):
             self.traj_config['arm'] = self.planned_segments
-            self.traj_config['sequence']['setup']['arm_traj_space'] = 'joint-planned'
+            if self.setup['arm_traj_space'] == 'cartesian':
+                self.traj_config['sequence']['setup']['arm_traj_space'] = 'joint-planned'
+            elif self.setup['arm_traj_space'] == 'cartesian-direct':
+                self.traj_config['sequence']['setup']['arm_traj_space'] = 'cartesian-direct'
+            elif self.setup['arm_traj_space'] == 'joint-legacy':
+                self.traj_config['sequence']['setup']['arm_traj_space'] = 'joint-legacy-planned'
         
         else:
             self.traj_config['arm'] = {}

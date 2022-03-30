@@ -1,7 +1,7 @@
 settings:
   units: 
     position: 'm' # m (meter), mm (millimeter)
-    orientation: 'euler_degrees' # euler_degrees, euler_radians, quaternion
+    orientation: 'quaternion' # euler_degrees, euler_radians, quaternion
 
   controlled_frame: 'tool0'
 

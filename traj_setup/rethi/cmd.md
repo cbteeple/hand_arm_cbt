@@ -84,39 +84,55 @@ roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_sof
 
 
 ## XZ with pivot
+
+### Rigid
+bash pick-place-build-plan.sh rethi/initial_insert_com/rigid_0deg
+bash pick-place-build-plan.sh rethi/initial_insert_com/rigid_2deg
+bash pick-place-build-plan.sh rethi/initial_insert_com/rigid_4deg
+bash pick-place-build-plan.sh rethi/initial_insert_com/rigid_6deg
+
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_rigid_reps  traj:=rethi/initial_insert_com/rigid_0deg  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_rigid_reps  traj:=rethi/initial_insert_com/rigid_2deg  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_rigid_reps  traj:=rethi/initial_insert_com/rigid_4deg  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_rigid_reps  traj:=rethi/initial_insert_com/rigid_6deg  use_checklist:=false reps:=5 speed_factor:=0.5
+
+### Soft
 bash pick-place-build-plan.sh rethi/initial_insert_com/0deg
 bash pick-place-build-plan.sh rethi/initial_insert_com/2deg
 bash pick-place-build-plan.sh rethi/initial_insert_com/4deg
 bash pick-place-build-plan.sh rethi/initial_insert_com/6deg
 
-### Rigid
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets  traj:=rethi/initial_insert_com/0deg  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets  traj:=rethi/initial_insert_com/2deg  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets  traj:=rethi/initial_insert_com/4deg  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets  traj:=rethi/initial_insert_com/6deg  use_checklist:=false reps:=1 speed_factor:=0.5
-
-### Soft
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft  traj:=rethi/initial_insert_com/0deg  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft  traj:=rethi/initial_insert_com/2deg  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft  traj:=rethi/initial_insert_com/4deg  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft  traj:=rethi/initial_insert_com/6deg  use_checklist:=false reps:=1 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft_reps  traj:=rethi/initial_insert_com/0deg  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft_reps  traj:=rethi/initial_insert_com/2deg  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft_reps  traj:=rethi/initial_insert_com/4deg  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft_reps  traj:=rethi/initial_insert_com/6deg  use_checklist:=false reps:=5 speed_factor:=0.5
 
 
 
 ## XZ no pivot (orthogonal)
+
+
+### Rigid
+bash pick-place-build-plan.sh rethi/initial_insert_com/rigid_0deg_noslip
+bash pick-place-build-plan.sh rethi/initial_insert_com/rigid_2deg_noslip
+bash pick-place-build-plan.sh rethi/initial_insert_com/rigid_4deg_noslip
+bash pick-place-build-plan.sh rethi/initial_insert_com/rigid_6deg_noslip
+
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_rigid_reps  traj:=rethi/initial_insert_com/rigid_0deg_noslip  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_rigid_reps  traj:=rethi/initial_insert_com/rigid_2deg_noslip  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_rigid_reps  traj:=rethi/initial_insert_com/rigid_4deg_noslip  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_rigid_reps  traj:=rethi/initial_insert_com/rigid_6deg_noslip  use_checklist:=false reps:=5 speed_factor:=0.5
+
+### Soft
 bash pick-place-build-plan.sh rethi/initial_insert_com/0deg_noslip
 bash pick-place-build-plan.sh rethi/initial_insert_com/2deg_noslip
 bash pick-place-build-plan.sh rethi/initial_insert_com/4deg_noslip
 bash pick-place-build-plan.sh rethi/initial_insert_com/6deg_noslip
 
-### Rigid
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets  traj:=rethi/initial_insert_com/0deg_noslip  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets  traj:=rethi/initial_insert_com/2deg_noslip  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets  traj:=rethi/initial_insert_com/4deg_noslip  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets  traj:=rethi/initial_insert_com/6deg_noslip  use_checklist:=false reps:=1 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft_reps  traj:=rethi/initial_insert_com/0deg_noslip  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft_reps  traj:=rethi/initial_insert_com/2deg_noslip  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft_reps  traj:=rethi/initial_insert_com/4deg_noslip  use_checklist:=false reps:=5 speed_factor:=0.5
+roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft_reps  traj:=rethi/initial_insert_com/6deg_noslip  use_checklist:=false reps:=5 speed_factor:=0.5
 
-### Soft
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft  traj:=rethi/initial_insert_com/0deg_noslip  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft  traj:=rethi/initial_insert_com/2deg_noslip  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft  traj:=rethi/initial_insert_com/4deg_noslip  use_checklist:=false reps:=1 speed_factor:=0.5
-roslaunch hand_arm run-traj.launch  config:=arm_hand.yaml  id:=angle_offsets_soft  traj:=rethi/initial_insert_com/6deg_noslip  use_checklist:=false reps:=1 speed_factor:=0.5
+
+
