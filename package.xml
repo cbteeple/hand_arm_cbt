@@ -60,7 +60,7 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
-  <exec_depend>ur_modern_driver</exec_depend>
+  <exec_depend>ur_robot_driver</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

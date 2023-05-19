@@ -104,7 +104,7 @@ add_message_files(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES hand_arm
-  CATKIN_DEPENDS roscpp rospy std_msgs ur_modern_driver
+  CATKIN_DEPENDS roscpp rospy std_msgs ur_robot_driver
 #  DEPENDS system_lib
 )
 
