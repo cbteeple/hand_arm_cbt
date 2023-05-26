@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import time
-import roslib; roslib.load_manifest('ur_driver')
+import roslib#; roslib.load_manifest('ur_driver')
 import rospy
 import actionlib
 from control_msgs.msg import *
@@ -26,6 +26,48 @@ from math import pi
 import numpy as np
 import yaml
 import os
+import pdb
+
+
+## from  test_move
+import rospy
+import actionlib
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
+from trajectory_msgs.msg import JointTrajectoryPoint
+from controller_manager_msgs.srv import SwitchControllerRequest, SwitchController
+from controller_manager_msgs.srv import LoadControllerRequest, LoadController
+from controller_manager_msgs.srv import ListControllers, ListControllersRequest
+import geometry_msgs.msg as geometry_msgs
+from cartesian_control_msgs.msg import (
+    FollowCartesianTrajectoryAction,
+    FollowCartesianTrajectoryGoal,
+    CartesianTrajectoryPoint,
+)
+# All of those controllers can be used to execute joint-based trajectories.
+# The scaled versions should be preferred over the non-scaled versions.
+JOINT_TRAJECTORY_CONTROLLERS = [
+    "scaled_pos_joint_traj_controller",
+    "scaled_vel_joint_traj_controller",
+    "pos_joint_traj_controller",
+    "vel_joint_traj_controller",
+    "forward_joint_traj_controller",
+]
+
+# All of those controllers can be used to execute Cartesian trajectories.
+# The scaled versions should be preferred over the non-scaled versions.
+CARTESIAN_TRAJECTORY_CONTROLLERS = [
+    "pose_based_cartesian_traj_controller",
+    "joint_based_cartesian_traj_controller",
+    "forward_cartesian_traj_controller",
+]
+# We'll have to make sure that none of these controllers are running, as they will
+# be conflicting with the joint trajectory controllers
+CONFLICTING_CONTROLLERS = ["joint_group_vel_controller", "twist_controller"]
+
+##
+
+
+
 
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
@@ -52,7 +94,51 @@ class PoseHandler():
         self.JOINT_NAMES = joint_names
         self.topics_connected = False
         self.move_time = 2.0
+        self.ur_script_pub = None
+        
 
+        ## From test move
+        timeout = rospy.Duration(5)
+        self.switch_srv = rospy.ServiceProxy(
+            "controller_manager/switch_controller", SwitchController
+        )
+        self.load_srv = rospy.ServiceProxy("controller_manager/load_controller", LoadController)
+        self.list_srv = rospy.ServiceProxy("controller_manager/list_controllers", ListControllers)
+        try:
+            self.switch_srv.wait_for_service(timeout.to_sec())
+        except rospy.exceptions.ROSException as err:
+            rospy.logerr("Could not reach controller switch service. Msg: {}".format(err))
+            sys.exit(-1)
+
+        self.joint_trajectory_controller = JOINT_TRAJECTORY_CONTROLLERS[0]
+        self.cartesian_trajectory_controller = CARTESIAN_TRAJECTORY_CONTROLLERS[0]
+        ## end from test move
+
+    def switch_controller(self, target_controller):
+        """Activates the desired controller and stops all others from the predefined list above"""
+        other_controllers = (
+            JOINT_TRAJECTORY_CONTROLLERS
+            + CARTESIAN_TRAJECTORY_CONTROLLERS
+            + CONFLICTING_CONTROLLERS
+        )
+
+        other_controllers.remove(target_controller)
+
+        srv = ListControllersRequest()
+        response = self.list_srv(srv)
+        for controller in response.controller:
+            if controller.name == target_controller and controller.state == "running":
+                return
+
+        srv = LoadControllerRequest()
+        srv.name = target_controller
+        self.load_srv(srv)
+
+        srv = SwitchControllerRequest()
+        srv.stop_controllers = other_controllers
+        srv.start_controllers = [target_controller]
+        srv.strictness = SwitchControllerRequest.BEST_EFFORT
+        self.switch_srv(srv)
 
     def _connect_topics(self):
         """
@@ -60,11 +146,20 @@ class PoseHandler():
         """
         try:
             if not self.topics_connected:
-                self.arm_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
-                self.ur_script_pub = rospy.Publisher('/ur_driver/URScript', std_msgs.msg.String, queue_size=10)
+                # pdb.set_trace()
+                # make sure the correct controller is loaded and activated
+                self.switch_controller(self.joint_trajectory_controller)
+        
+                self.arm_client = actionlib.SimpleActionClient("{}/follow_joint_trajectory".format(self.joint_trajectory_controller), FollowJointTrajectoryAction)
+                # pdb.set_trace()
+                self.ur_script_pub = rospy.Publisher('script_command', std_msgs.msg.String, queue_size=10)
                 #hand_client = actionlib.SimpleActionClient('pre_built_traj', pressure_controller_ros.msg.RunAction)
                 print "Waiting for servers..."
-                self.arm_client.wait_for_server()
+                timeout = rospy.Duration(5)
+                if not self.arm_client.wait_for_server(timeout):
+                    rospy.logerr("Coud not reach controller action server.")
+                    sys.exit(-1)
+
                 #hand_client.wait_for_server()
                 print "Connected to servers"
 
@@ -228,7 +323,11 @@ class PoseHandler():
         time : float, optional
             The time duration of the move. (default = 2.0 sec)
         """
+        # pdb.set_trace()
         pose = self.get_pose_by_name(pose_name)
+
+        print(pose)
+        pdb.set_trace()
         if pose is not None:
             self.move_to(pose, time)
         else:
@@ -256,6 +355,7 @@ class PoseHandler():
 
         new_pose = {}
         new_pose['joints'] = self._get_pose()
+        print("GOT POSE: ", new_pose['joints'])
         new_pose['units']  = 'radians'
         response = self.set_pose_by_name(pose_name, new_pose)
         if response:
@@ -280,6 +380,7 @@ class PoseHandler():
         if isinstance(time, float):
             if time>=0:
                 time_duration = time
+
 
         self._connect_topics()
         joints = pose['joints']
