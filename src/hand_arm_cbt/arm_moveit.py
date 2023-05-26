@@ -63,6 +63,15 @@ filepath_default = os.path.join('..','trajectories')
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
 
+# All of those controllers can be used to execute joint-based trajectories.
+# The scaled versions should be preferred over the non-scaled versions.
+JOINT_TRAJECTORY_CONTROLLERS = [
+    "scaled_pos_joint_traj_controller",
+    "scaled_vel_joint_traj_controller",
+    "pos_joint_traj_controller",
+    "vel_joint_traj_controller",
+    "forward_joint_traj_controller",
+]
 
 
 def all_close(goal, actual, tolerance):
@@ -109,13 +118,18 @@ class MoveItPythonInteface(object):
                                                                                                      queue_size=20)
 
 
-
+        self.joint_trajectory_controller = JOINT_TRAJECTORY_CONTROLLERS[0]
         # Load up the arm client
         if non_excecuting:
             #self.traj_client = actionlib.SimpleActionClient('/move_group', moveit_msgs.msg.MoveGroupAction)
-            self.traj_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
+            # self.traj_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
+            self.traj_client = actionlib.SimpleActionClient("{}/follow_joint_trajectory".format(self.joint_trajectory_controller), FollowJointTrajectoryAction)
+            
             print("Waiting for servers...")
-            self.traj_client.wait_for_server()
+            timeout = rospy.Duration(5)
+            if not self.traj_client.wait_for_server(timeout):
+                rospy.logerr("Coud not reach controller action server.")
+                sys.exit(-1)
             print ("Connected to servers")
         else:
             self.traj_client = None
@@ -318,6 +332,38 @@ class MoveItPythonInteface(object):
         # we use the class variable rather than the copied state variable
         #return all_close(pose_goal, current_pose, 0.01)
 
+
+    def go_to_random_config(self, xyz_lim = [0.005, 0.005], rpy = [-10, 10]):
+        waypoints = []
+
+        waypoints.append(self.move_group.get_current_pose().pose)
+
+        curr_pose = waypoints[0]
+
+        wpose = geometry_msgs.msg.Pose()
+        wpose.orientation.x = curr_pose.orientation.x
+        wpose.orientation.y = curr_pose.orientation.y
+        wpose.orientation.z = curr_pose.orientation.z
+        wpose.position.x = curr_pose.position.x
+        wpose.position.y = curr_pose.position.y
+        wpose.position.z = curr_pose.position.z
+
+        # generate random pose to go to 
+
+        # wpose.orientation.x += np.radians(10)
+
+        # quaternion = [
+        #     wpose.orientaiton.x
+        #     wpose.orientaiton.y
+        #     wpose.orientaiton.z
+        #     wpose.orientaiton.w
+        #     ]
+        # roll, pitch, yaw = euler_from_quaternion(quaternion)
+
+        wpose.position.z += 0.1
+
+        waypoints.append(copy.deepcopy(wpose))
+        return waypoints
 
 
 
@@ -582,21 +628,22 @@ def main():
         raw_input()
         tutorial = MoveItPythonInteface()
 
-        print "============ Press `Enter` to execute a movement using a joint state goal ..."
-        raw_input()
-        tutorial.go_to_joint_state()
+        # print "============ Press `Enter` to execute a movement using a joint state goal ..."
+        # raw_input()
+        # tutorial.go_to_joint_state()
 
-        print "============ Press `Enter` to plan a movement using a pose goal ..."
-        raw_input()
-        tutorial.plan_pose_goal()
+        # print "============ Press `Enter` to plan a movement using a pose goal ..."
+        # raw_input()
+        # tutorial.plan_pose_goal()
 
-        print "============ Press `Enter` to execute a movement using a pose goal ..."
-        raw_input()
-        tutorial.go_to_pose_goal()
+        # print "============ Press `Enter` to execute a movement using a pose goal ..."
+        # raw_input()
+        # tutorial.go_to_pose_goal()
 
         print "============ Press `Enter` to plan and display a Cartesian path ..."
         raw_input()
-        cartesian_plan, fraction = tutorial.plan_cartesian_path(scale=1.0)
+        waypoints = tutorial.go_to_random_config()
+        cartesian_plan, fraction = tutorial.plan_cartesian_path(waypoints)
 
         print "============ Press `Enter` to display a saved trajectory (this will replay the Cartesian path)  ..."
         raw_input()
@@ -604,7 +651,7 @@ def main():
 
         print "============ Press `Enter` to execute a saved path ..."
         raw_input()
-        tutorial.execute_plan(cartesian_plan)
+        tutorial.execute_traj_moveit(cartesian_plan)
 
 
         print "============ Python tutorial demo complete!"
