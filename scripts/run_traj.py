@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import time
-import roslib; roslib.load_manifest('ur_driver')
+import roslib#; roslib.load_manifest('ur_driver')
 import rospy
 import actionlib
 from control_msgs.msg import *
@@ -33,11 +33,11 @@ from datetime import datetime
 
 from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
 from hand_arm_cbt.arm_mover import trajSender as ur_traj_sender
-from robotiq_trajectory_control.robotiq_2f_trajectory import trajSender as robotiq_traj_sender
+# from robotiq_trajectory_control.robotiq_2f_trajectory import trajSender as robotiq_traj_sender
 from hand_arm_cbt.arm_moveit import MoveItPythonInteface as ur_traj_sender_moveit
 import rosbag_recorder.srv as rbr
-import video_recorder.srv as vrec
-
+# import video_recorder.srv as vrec
+import pdb
 
 reset_time = 2.0
 
@@ -115,8 +115,9 @@ class TrajRunner:
         # Create the arm objects
         if self.use_arm:
             if (setup['arm_traj_space']== 'joint') or (setup['arm_traj_space']== 'joint-planned'):
+                # print("run_traj trajSender")
                 self.arm_sender = ur_traj_sender(JOINT_NAMES, self.speed_factor)
-
+                pdb.set_trace()
             elif setup['arm_traj_space'] == 'cartesian':
                 self.arm_sender = ur_traj_sender_moveit(JOINT_NAMES)
 
@@ -340,8 +341,11 @@ class TrajRunner:
             self.get_sequence()
 
             # Go to the start
-            #inp = raw_input("Move to Starting Position? (Press ENTER)")
-            self.go_to_start()
+            inp = raw_input("Move to Starting Position? (Press ENTER)")
+            # self.go_to_start() ## <=== this fails
+
+            # pdb.set_trace()
+
             self.plan_sequence()
 
             # Excecute the trajectory the desired number of times
@@ -456,6 +460,7 @@ class TrajRunner:
 
     def excecute_sequence(self):
         print('Excecute Sequence')
+        # pdb.set_trace()
         for plan in self.operation_plans:
             if (plan['hand'] is not None) and (self.use_hand):
                 self.hand_sender.execute_traj(plan['hand'], blocking=False)
@@ -463,6 +468,8 @@ class TrajRunner:
             if (plan['servo'] is not None) and (self.use_servo):
                 self.servo_sender.execute_traj(plan['servo'], blocking=False)
 
+            print("DEBUGGGG display on moveit by copy pasting")
+            pdb.set_trace()
             if (plan['arm'] is not None) and (self.use_arm):
                 if not self.fake:
                     self.arm_sender.execute_traj(plan['arm'], blocking=False)
@@ -474,11 +481,14 @@ class TrajRunner:
             if self.use_servo:
                 self.servo_sender.traj_client.wait_for_result()
             if self.use_arm:
+                pdb.set_trace() ## GOT Error: Called wait_for_result when no goal exists
                 self.arm_sender.traj_client.wait_for_result()
 
             
         
     def rep_sequence(self, wait_before_each = True):
+        print("num reps: ", self.num_reps)
+        pdb.set_trace()
         for idx in range(self.num_reps):
             self.curr_rep=idx
             print('REP: %d'%(idx))
@@ -547,6 +557,7 @@ def main(file_name=None):
         rospy.init_node("trajectory_runner", anonymous=True, disable_signals=True)
 
         node = TrajRunner()
+        # pdb.set_trace()
         node.run_multiple()
         node.shutdown()
 

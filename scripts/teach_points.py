@@ -17,7 +17,7 @@
 from __future__ import print_function
 
 import time
-import roslib; roslib.load_manifest('ur_driver');
+import roslib#; roslib.load_manifest('ur_driver');
 import rospy
 import actionlib
 from control_msgs.msg import *
@@ -33,6 +33,7 @@ import os
 import sys
 from pynput.keyboard import Key, KeyCode, Listener
 from hand_arm_cbt.traj_planner import TrajPlanner
+import pdb
 
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
@@ -42,7 +43,7 @@ import inspect
 
 class Teacher:
     def __init__(self, traj_file, point_type='joint', hand_type='pressure' ):
-        self.ur_script_pub = rospy.Publisher('/ur_driver/URScript', std_msgs.msg.String, queue_size=10)
+        self.ur_script_pub = rospy.Publisher('script_command', std_msgs.msg.String, queue_size=10)
         self.r=rospy.Rate(20)
         self.toggle_record = False
 
@@ -56,7 +57,12 @@ class Teacher:
 
         if self.point_type == 'cartesian':
             self.compute_fk = rospy.ServiceProxy('/compute_fk', GetPositionFK)    
-            self.compute_fk.wait_for_service()
+            # self.compute_fk.wait_for_service()
+            timeout = rospy.Duration(5)
+            if not self.compute_fk.wait_for_service(timeout):
+                rospy.logerr("Coud not get /compute_fk")
+                sys.exit(-1)
+
             print("got kinematics service")
 
         self.get_settings()
@@ -110,27 +116,29 @@ class Teacher:
             g_press = float(raw_input("Enter grasping pressure (default=15.0 psi): ") or "15.0")
             i_press = float(raw_input("Enter idle pressure (default=0.0 psi): ") or "0.0")
             g_time = float(raw_input("Enter grasping time (default=1.5 sec): ") or "1.5")
+            # pdb.set_trace()
 
-            from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
-            self.hand_sender = pneu_traj_sender()
-            self.hand_sender.DEBUG = False
+            # TODO: Fix the following x lines to get pneumatic hand going
+            # from pressure_controller_ros.live_traj_new import trajSender as pneu_traj_sender
+            # self.hand_sender = pneu_traj_sender()
+            # self.hand_sender.DEBUG = False
         
-            num_channels = sum(rospy.get_param('/pressure_control/num_channels'))
+            # num_channels = sum(rospy.get_param('/pressure_control/num_channels'))
             
-            import pressure_controller_ros.msg as hand_msg
-            self.grasp_traj = [ [0.0] + [i_press]*num_channels, [g_time] + [g_press]*num_channels ]
-            self.release_traj = [ [0.0] + [g_press]*num_channels, [g_time] + [i_press]*num_channels ]
+            # import pressure_controller_ros.msg as hand_msg
+            # self.grasp_traj = [ [0.0] + [i_press]*num_channels, [g_time] + [g_press]*num_channels ]
+            # self.release_traj = [ [0.0] + [g_press]*num_channels, [g_time] + [i_press]*num_channels ]
 
-            self.grasp_traj_send = self.hand_sender.build_traj(self.grasp_traj)
-            self.release_traj_send = self.hand_sender.build_traj(self.release_traj)
+            # self.grasp_traj_send = self.hand_sender.build_traj(self.grasp_traj)
+            # self.release_traj_send = self.hand_sender.build_traj(self.release_traj)
 
-            self.hand['grasp'] = self.grasp_traj
-            self.hand['release'] = self.release_traj
-            self.hand['startup'] = [self.grasp_traj[0]]
+            # self.hand['grasp'] = self.grasp_traj
+            # self.hand['release'] = self.release_traj
+            # self.hand['startup'] = [self.grasp_traj[0]]
 
-            self.hand_sender.go_to_start(self.grasp_traj, 2.0, blocking=False)
-            print('Hand is at starting pos')
-
+            # self.hand_sender.go_to_start(self.grasp_traj, 2.0, blocking=False)
+            # print('Hand is at starting pos')
+            print("hand startup is skipped")
         else:
             self.hand_sender = None
 
@@ -217,6 +225,7 @@ class Teacher:
             self.last_time = joint_states.header.stamp.to_sec()
 
         if self.point_type == 'cartesian':
+            pdb.set_trace()
             req = GetPositionFKRequest()
             req.header.frame_id = 'world'
             req.fk_link_names = ['tcp']
@@ -342,6 +351,7 @@ def main(file_name=None, flags=""):
             print("Using Cartesian Mode")
         else:
             point_type = 'joint'
+            print("Using Joint Space Mode (NOT Cartesian)")
 
         if "robotiq" in flags:
             hand_type='robotiq'

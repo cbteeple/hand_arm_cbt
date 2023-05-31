@@ -15,19 +15,30 @@
 # limitations under the License.
 
 import time
-import roslib; roslib.load_manifest('ur_driver')
+import roslib#; roslib.load_manifest('ur_driver')
 import rospy
 import actionlib
 from control_msgs.msg import *
 from trajectory_msgs.msg import *
 from sensor_msgs.msg import JointState
 from moveit_msgs.msg import DisplayTrajectory, RobotState, RobotTrajectory
+import moveit_msgs.msg
 from math import pi
 import yaml
 import os
 import sys
 import copy
 import threading
+import pdb
+# All of those controllers can be used to execute joint-based trajectories.
+# The scaled versions should be preferred over the non-scaled versions.
+JOINT_TRAJECTORY_CONTROLLERS = [
+    "scaled_pos_joint_traj_controller",
+    "scaled_vel_joint_traj_controller",
+    "pos_joint_traj_controller",
+    "vel_joint_traj_controller",
+    "forward_joint_traj_controller",
+]
 
 
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
@@ -44,9 +55,17 @@ class trajSender:
         self.reset_time = 10.0
             
         # Load up the arm client
-        self.traj_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
+        self.joint_trajectory_controller = JOINT_TRAJECTORY_CONTROLLERS[0]
+        # self.traj_client = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
+        self.traj_client = actionlib.SimpleActionClient("{}/follow_joint_trajectory".format(self.joint_trajectory_controller), FollowJointTrajectoryAction)
+                
         print("Waiting for servers...")
-        self.traj_client.wait_for_server()
+        # self.traj_client.wait_for_server()
+        timeout = rospy.Duration(5)
+        if not self.traj_client.wait_for_server(timeout):
+            rospy.logerr("Coud not reach controller action server.")
+            sys.exit(-1)
+
         print ("Connected to servers")
 
         self.arm_trajIn = []
@@ -55,10 +74,8 @@ class trajSender:
         self.goal_blank.trajectory = JointTrajectory()
         self.get_joint_names(joint_names)
 
-        self.display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path',
-                                                                                                     DisplayTrajectory,
-                                                                                                     queue_size=20)
-        
+        self.display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path',DisplayTrajectory,queue_size=20)
+        # print("trajSender init finished")
 
         
 
@@ -142,6 +159,8 @@ class trajSender:
 
     def go_to_start(self, goal, reset_time, blocking=True):
 
+        # print("At arm_mover go_to_start")
+        # pdb.set_trace()
         if type(goal) is type(self.goal_blank):
             pos = goal.trajectory.points[0].positions
         else:
@@ -160,6 +179,12 @@ class trajSender:
 
         goal_tmp.trajectory.points.append(curr_pt)
 
+        # display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path',
+        #                                                                                              moveit_msgs.msg.DisplayTrajectory,
+        #                                                                                              queue_size=20)
+        # display_trajectory_publisher.publish(goal_tmp);
+
+        pdb.set_trace()
         self.execute_traj( goal_tmp, blocking)
 
 
